@@ -8,29 +8,7 @@
 #include <time.h>
 #include "hal.h"
 #include "lib.h"
-
-static void gmp_verify(const uint32_t *A, const uint32_t *B, size_t n_limbs)
-{
-    mpz_t a, b, result;
-    mpz_init(a);
-    mpz_init(b);
-    mpz_init(result);
-
-    /* Import A and B into GMP integers */
-    mpz_import(a, n_limbs, -1, sizeof(uint32_t), 0, 0, A);
-    mpz_import(b, n_limbs, -1, sizeof(uint32_t), 0, 0, B);
-    gmp_printf("A: %ZX\n", a);
-    gmp_printf("B: %ZX\n", b);
-
-    /* Perform multiplication */
-    mpz_mul(result, a, b);
-    gmp_printf("Result: %ZX\n", result);
-
-    /* Clear GMP integers */
-    mpz_clear(a);
-    mpz_clear(b);
-    mpz_clear(result);
-}
+#include "karatsuba.h"
 
 // ---------- tiny carry-aware school-book for n = 8 ----------------
 // static inline void sb8_mul(uint32_t *restrict dst,
@@ -185,7 +163,7 @@ static void karatsuba32_vec(uint32_t *restrict dst,
     free(TMP);
 }
 
-static void bench_karatsuba()
+void bench_karatsuba(uint32_t *A, uint32_t *B)
 {
     // gnereate random A and B
     if (LIMBS_NUM % 8 != 0)
@@ -194,15 +172,10 @@ static void bench_karatsuba()
         exit(EXIT_FAILURE);
     }
 
-    uint32_t A[LIMBS_NUM] = {0};
-    uint32_t B[LIMBS_NUM] = {0};
-    uint32_t dst[LIMBS_NUM << 1] = {0};
     int i, j;
     uint64_t t0, t1;
     uint64_t cycles[NTESTS];
-    srand((unsigned int)time(NULL));
-    generate_random_bigint(A, LIMBS_NUM * BITS_PER_LIMB);
-    generate_random_bigint(B, LIMBS_NUM * BITS_PER_LIMB);
+    uint32_t dst[LIMBS_NUM << 1] = {0};
 
     for (i = 0; i < NTESTS; i++)
     {
@@ -222,15 +195,15 @@ static void bench_karatsuba()
         cycles[i] = t1 - t0;
     }
     qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
-    print_computation_result("Karatsuba multiplication", A, B, dst, LIMBS_NUM, 0);
     print_benchmark_results("karatsuba32_vec", cycles);
-    gmp_verify(A, B, LIMBS_NUM);
-}
 
-int main()
-{
-    enable_cyclecounter();
-    bench_karatsuba();
-    disable_cyclecounter();
-    return 0;
+#ifdef VERBOSE
+    printf("------------------------------------------\n");
+    print_computation_result("Karatsuba multiplication", A, B, dst, LIMBS_NUM, 0);
+    printf("------------------------------------------\n");
+#endif
+
+    // Clear memory
+    for (i = 0; i < LIMBS_NUM << 1; i++)
+        dst[i] = 0; // zero the result
 }

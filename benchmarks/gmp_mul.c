@@ -3,23 +3,31 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <time.h>
 #include "hal.h"
 #include "lib.h"
+#include "gmp_mul.h"
 
-static int bench_gmp()
+void bench_gmp(uint32_t *A, uint32_t *B)
 {
     int i, j;
-    int n = LIMBS_NUM * BITS_PER_LIMB;
-    uint64_t t0, t1;
-    mpz_t a, b, result;
+    // int n = LIMBS_NUM * BITS_PER_LIMB;
     uint64_t cycles[NTESTS];
+    uint64_t t0, t1;
 
-    // Initialize variables
-    gmp_rand_operand_gen(a, n);
-    gmp_rand_operand_gen(b, n);
-    mpz_init(result); // Initialize result
+    // gmp initialization
+    mpz_t a, b, result;
+    mpz_init(a);
+    mpz_init(b);
+    mpz_init(result);
+    mpz_import(a, LIMBS_NUM, -1, sizeof(uint32_t), 0, 0, A);
+    mpz_import(b, LIMBS_NUM, -1, sizeof(uint32_t), 0, 0, B);
+
+#ifdef VERBOSE
+    printf("------------------------------------------\n");
+
+    gmp_printf("A = %Zd\n", a);
+    gmp_printf("B = %Zd\n", b);
+#endif
 
     for (i = 0; i < NTESTS; i++)
     {
@@ -44,19 +52,13 @@ static int bench_gmp()
     qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
     print_benchmark_results("mpz_mul", cycles);
 
+#ifdef VERBOSE
+    gmp_printf("Result = %Zd\n", result);
+    printf("------------------------------------------\n");
+#endif
+
     // Clear memory
     mpz_clear(a);
     mpz_clear(b);
     mpz_clear(result);
-
-    return 0;
-}
-
-int main(void)
-{
-    enable_cyclecounter();
-    bench_gmp();
-    disable_cyclecounter();
-
-    return 0;
 }

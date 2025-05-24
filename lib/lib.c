@@ -105,9 +105,10 @@ void print_benchmark_results(const char *txt, uint64_t cycles[NTESTS])
 void print_computation_result(const char *txt, uint32_t *A, uint32_t *B, uint32_t *dst, size_t n_limbs, int fmt)
 {
     printf("%s:\n", txt);
+    printf("A = ");
     print_bigint(A, n_limbs, fmt);
-    printf("*\n");
+    printf("B = ");
     print_bigint(B, n_limbs, fmt);
-    printf("=\n");
+    printf("Result =");
     print_bigint(dst, n_limbs << 1, fmt);
 }

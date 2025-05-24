@@ -27,6 +27,7 @@ CFLAGS := \
 	-Ihal \
 	-Ilib \
 	-Ifft \
+	-Ibenchmarks \
 	-MMD \
 	$(CFLAGS)
 
@@ -45,27 +46,35 @@ ifeq ($(CYCLES),MAC)
 	CFLAGS += -DMAC_CYCLES
 endif
 
+# if verbose, print computation result
+ifeq ($(VERBOSE), TRUE)
+	CFLAGS += -DVERBOSE
+endif
+
+
 # Targets
-TARGETS = bench_gmp bench_karatsuba
-TARGET_GMP = bench_gmp
-TARGET_KARATSUBA = bench_karatsuba
+TARGET = bench
+#TARGETS = bench_gmp bench_karatsuba
+#TARGET_GMP = bench_gmp
+#TARGET_KARATSUBA = bench_karatsuba
 
 # Source sets
-COMMON_SOURCES = hal/hal.c lib/lib.c
-GMP_SOURCES = gmp.c $(COMMON_SOURCES)
-KARATSUBA_SOURCES = karatsuba.c $(COMMON_SOURCES)
+SOURCES = hal/hal.c lib/lib.c benchmarks/gmp_mul.c benchmarks/karatsuba.c bench.c
+
+#COMMON_SOURCES = hal/hal.c lib/lib.c
+#GMP_SOURCES = gmp.c $(COMMON_SOURCES)
+#KARATSUBA_SOURCES = karatsuba.c $(COMMON_SOURCES)
 
 
-all: $(TARGETS)
+#all: $(TARGET)
 
-# GMP target
-bench_gmp: $(GMP_SOURCES)
-	$(CC) $(CFLAGS) $(GMP_SOURCES) -o $(TARGET_GMP) $(LDFLAGS) $(LDLIBS)
+$(TARGET): $(SOURCES)
+	$(CC) $(CFLAGS) $(SOURCES) -o $(TARGET) $(LDFLAGS) $(LDLIBS)
 
 # Karatsuba target
-bench_karatsuba: $(KARATSUBA_SOURCES)
-	$(CC) $(CFLAGS) $(KARATSUBA_SOURCES) -o $(TARGET_KARATSUBA) $(LDFLAGS) $(LDLIBS)
+#bench_karatsuba: $(KARATSUBA_SOURCES)
+#	$(CC) $(CFLAGS) $(KARATSUBA_SOURCES) -o $(TARGET_KARATSUBA) $(LDFLAGS) $(LDLIBS)
 
 
 clean:
-	-$(RM) -rf $(TARGETS) *.d
+	-$(RM) -rf $(TARGET) *.d
