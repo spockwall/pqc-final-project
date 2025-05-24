@@ -146,7 +146,8 @@ static void bench_karatsuba()
         cycles[i] = t1 - t0;
     }
     qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
-    printf("Karatsuba multiplication took %lu cycles\n", cycles[NTESTS / 2] / NITERATIONS);
+    print_computation_result("Karatsuba multiplication", A, B, dst, LIMBS_NUM);
+    print_benchmark_results("karatsuba32_vec", cycles);
 }
 
 int main()

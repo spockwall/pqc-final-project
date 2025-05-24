@@ -23,6 +23,5 @@ void generate_random_bigint(uint32_t *output, int n_bits);
 int cmp_uint64_t(const void *a, const void *b);
 
 // Benchmarking functions
-void print_median(const char *txt, uint64_t cyc[NTESTS]);
-void print_percentile_legend(void);
-void print_percentiles(const char *txt, uint64_t cyc[NTESTS]);
+void print_benchmark_results(const char *txt, uint64_t cycles[NTESTS]);
+void print_computation_result(const char *txt, uint32_t *A, uint32_t *B, uint32_t *dst, size_t n_limbs);

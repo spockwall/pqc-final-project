@@ -47,7 +47,7 @@ void print_bigint_in_dec(const uint32_t *a, size_t n)
                0,                   /* nails                     */
                a);                  /* source pointer            */
 
-    gmp_printf("%Zd", z);
+    gmp_printf("%Zd\n", z);
     mpz_clear(z);
 }
 
@@ -61,16 +61,15 @@ void generate_random_bigint(uint32_t *output, int n_bits)
     }
 }
 // print the median of the benchmarking results
-void print_median(const char *txt, uint64_t cyc[NTESTS])
+static void print_median(const char *txt, uint64_t cyc[NTESTS])
 {
     printf("%10s cycles = %" PRIu64 "\n", txt, cyc[NTESTS >> 1] / NITERATIONS);
 }
 
-
 int percentiles[] = {1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99};
 
 // print the legend for percentiles of the benchmarking results
-void print_percentile_legend(void)
+static void print_percentile_legend(void)
 {
     unsigned i;
     printf("%21s", "percentile");
@@ -82,7 +81,7 @@ void print_percentile_legend(void)
 }
 
 // print the percentiles of the benchmarking results
-void print_percentiles(const char *txt, uint64_t cyc[NTESTS])
+static void print_percentiles(const char *txt, uint64_t cyc[NTESTS])
 {
     unsigned i;
     printf("%10s percentiles:", txt);
@@ -91,4 +90,22 @@ void print_percentiles(const char *txt, uint64_t cyc[NTESTS])
         printf("%7" PRIu64, (cyc)[NTESTS * percentiles[i] / 100] / NITERATIONS);
     }
     printf("\n");
+}
+
+void print_benchmark_results(const char *txt, uint64_t cycles[NTESTS])
+{
+    print_median(txt, cycles);
+    printf("\n");
+    print_percentile_legend();
+    print_percentiles(txt, cycles);
+}
+
+void print_computation_result(const char *txt, uint32_t *A, uint32_t *B, uint32_t *dst, size_t n_limbs)
+{
+    printf("%s:\n", txt);
+    print_bigint_in_dec(A, n_limbs);
+    printf("*\n");
+    print_bigint_in_dec(B, n_limbs);
+    printf("=\n");
+    print_bigint_in_dec(dst, n_limbs << 1);
 }

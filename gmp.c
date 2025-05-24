@@ -49,10 +49,7 @@ static int bench_gmp()
 
     // Stdout result
     qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
-    print_median("mpz_mul", cycles);
-    printf("\n");
-    print_percentile_legend();
-    print_percentiles("mpz_mul", cycles);
+    print_benchmark_results("mpz_mul", cycles);
 
     return 0;
 }
