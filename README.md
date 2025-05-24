@@ -29,35 +29,40 @@ $ ./bench
 
 ## Usage
 
-To compile the example that uses `perf` for cycle counting, run
+To compile the GMP benchmarks that uses `perf` for cycle counting, run
 ```bash
-make CYCLES=PERF
+make bench_gmp CYCLES=PERF
 # perf requires root
-sudo ./bench
+sudo ./bench_gmp
 ```
 
-To compile the example that uses PMU registers for cycle counting, run
+To compile the GMP benchmarks that uses PMU registers for cycle counting, run
 ```bash
-make CYCLES=PERF
-./bench
+make bench_gmp CYCLES=PMU
+./bench_gmp
 ```
 (If you see an `Illegal Instruction` exception that likely means you did not 
 enable access to PMU register from user mode. You will have to install a kernel
 module to do so. See e.g., [here](https://github.com/mupq/pqax/tree/main/enable_ccr)).
 
-To compile the example that uses Apple's KPC framework (which works on both x86_64 and AArch64), run 
+To compile the GMP benchmarks that uses Apple's KPC framework (which works on both x86_64 and AArch64), run 
 ```bash
-make CYCLES=PERF
+make bench_gmp CYCLES=MAC
 # KPC requires root
-sudo ./bench
+sudo ./bench_gmp
 ```
 
 (Note that this code currently does not work on the Apple M4. If you need 
 benchmarking on the Apple M4, refer to [this framework](https://gist.github.com/ibireme/173517c208c7dc333ba962c1f0d67d12)).
 
 
-To compile Karatsuba:
+To compile the Karatsuba benchmarks that uses `perf` for cycle counting, run
 ```bash
-gcc -O3 -mcpu=cortex-a72 -Ihal -DPERF_CYCLES hal/hal.c karatsuba.c -lgmp -o karatsuba
-./karatsuba
+make bench_karatsuba CYCLES=PERF
+sudo ./bench_karatsuba
+```
+To compile the all benchmarks that uses `perf` for cycle counting, run
+```bash
+make all CYCLES=PERF
+sudo ./bench_karatsuba && ./bench_gmp
 ```
