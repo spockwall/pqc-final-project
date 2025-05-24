@@ -11,7 +11,7 @@
 static int bench_gmp()
 {
     int i, j;
-    int n = 1024;
+    int n = LIMBS_NUM * BITS_PER_LIMB;
     uint64_t t0, t1;
     mpz_t a, b, result;
     uint64_t cycles[NTESTS];
@@ -39,17 +39,15 @@ static int bench_gmp()
 
         cycles[i] = t1 - t0;
     }
-    // Print result
-    gmp_printf("Result: %Zd\n", result);
+
+    // Stdout result
+    qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
+    print_benchmark_results("mpz_mul", cycles);
 
     // Clear memory
     mpz_clear(a);
     mpz_clear(b);
     mpz_clear(result);
-
-    // Stdout result
-    qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
-    print_benchmark_results("mpz_mul", cycles);
 
     return 0;
 }
