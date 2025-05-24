@@ -31,10 +31,10 @@ static inline void sb8_mul(uint32_t *restrict dst,
     }
 }
 // n must be a multiple of 8 limbs (256 bits).  dst length = 2n.
-void karatsuba32_vec(uint32_t *restrict dst,
-                     const uint32_t *restrict A,
-                     const uint32_t *restrict B,
-                     size_t n)
+static void karatsuba32_vec(uint32_t *restrict dst,
+                            const uint32_t *restrict A,
+                            const uint32_t *restrict B,
+                            size_t n)
 {
     // base case : 8 × 8 limbs = 256-bit × 256-bit
     if (n % 8 != 0)
@@ -65,7 +65,10 @@ void karatsuba32_vec(uint32_t *restrict dst,
     karatsuba32_vec(dst + mm, A1, B1, m);
 
     // ---- (A0+A1) and (B0+B1)  (vectorised) ----------------------
-    uint32_t SA[m], SB[m];
+    // uint32_t SA[m], SB[m];
+    uint32_t *SA = (uint32_t *)malloc(m * sizeof(uint32_t));
+    uint32_t *SB = (uint32_t *)malloc(m * sizeof(uint32_t));
+
     for (size_t i = 0; i < m; i += 4)
     {
         uint32x4_t a0 = vld1q_u32(&A0[i]);
@@ -77,7 +80,9 @@ void karatsuba32_vec(uint32_t *restrict dst,
     }
 
     // ---- TMP = (A0+A1)(B0+B1) ----------------------------------
-    uint32_t TMP[mm];
+    // uint32_t TMP[mm];
+    uint32_t *TMP = (uint32_t *)malloc(mm * sizeof(uint32_t));
+
     karatsuba32_vec(TMP, SA, SB, m);
 
     // ---- Z₁ = TMP − Z₀ − Z₂ ------------------------------------
@@ -104,16 +109,19 @@ void karatsuba32_vec(uint32_t *restrict dst,
     }
     // if carry ≠ 0 here, dst has room (length = 2 n limbs)
     dst[nm] = (uint32_t)carry;
+
+    free(SA);
+    free(SB);
+    free(TMP);
 }
 
-void bench_karatsuba()
+static void bench_karatsuba()
 {
     // gnereate random A and B
     uint32_t A[LIMBS_NUM] = {0};
     uint32_t B[LIMBS_NUM] = {0};
     uint32_t dst[LIMBS_NUM << 1] = {0};
     int i, j;
-    int n = 1024;
     uint64_t t0, t1;
     uint64_t cycles[NTESTS];
     srand((unsigned int)time(NULL));
@@ -138,7 +146,7 @@ void bench_karatsuba()
         cycles[i] = t1 - t0;
     }
     qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
-    printf("Karatsuba multiply took %lu cycles\n", cycles[NTESTS / 2] / NITERATIONS);
+    printf("Karatsuba multiplication took %lu cycles\n", cycles[NTESTS / 2] / NITERATIONS);
 }
 
 int main()
