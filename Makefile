@@ -2,12 +2,8 @@
 
 .PHONY: clean
 
-TARGET = bench_gmp
 CC  ?= gcc
 LD  := $(CC)
-
-#SOURCES = hal/hal.c bench.c ntt_zetas.c ntt.S
-SOURCES = hal/hal.c lib/lib.c fft/fft.c gmp.c
 
 
 CFLAGS := \
@@ -49,10 +45,27 @@ ifeq ($(CYCLES),MAC)
 	CFLAGS += -DMAC_CYCLES
 endif
 
-all: $(TARGET)
+# Targets
+TARGETS = bench_gmp bench_karatsuba
+TARGET_GMP = bench_gmp
+TARGET_KARATSUBA = bench_karatsuba
 
-$(TARGET): $(SOURCES)
-	$(CC) $(CFLAGS) $(SOURCES) -o $(TARGET) $(LDFLAGS) $(LDLIBS)
+# Source sets
+COMMON_SOURCES = hal/hal.c lib/lib.c
+GMP_SOURCES = gmp.c $(COMMON_SOURCES)
+KARATSUBA_SOURCES = karatsuba.c $(COMMON_SOURCES)
+
+
+all: $(TARGETS)
+
+# GMP target
+bench_gmp: $(GMP_SOURCES)
+	$(CC) $(CFLAGS) $(GMP_SOURCES) -o $(TARGET_GMP) $(LDFLAGS) $(LDLIBS)
+
+# Karatsuba target
+bench_karatsuba: $(KARATSUBA_SOURCES)
+	$(CC) $(CFLAGS) $(KARATSUBA_SOURCES) -o $(TARGET_KARATSUBA) $(LDFLAGS) $(LDLIBS)
+
 
 clean:
-	-$(RM) -rf $(TARGET) *.d
+	-$(RM) -rf $(TARGETS) *.d
