@@ -2,12 +2,12 @@
 
 .PHONY: clean
 
-TARGET = bench
+TARGET = bench_gmp
 CC  ?= gcc
 LD  := $(CC)
 
 #SOURCES = hal/hal.c bench.c ntt_zetas.c ntt.S
-SOURCES = hal/hal.c bench.c lib/lib.c fft/fft.c
+SOURCES = hal/hal.c lib/lib.c fft/fft.c gmp.c
 
 
 CFLAGS := \
