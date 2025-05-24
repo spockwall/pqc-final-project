@@ -31,15 +31,15 @@ $ ./bench
 
 To compile the GMP benchmarks that uses `perf` for cycle counting, run
 ```bash
-make bench_gmp CYCLES=PERF
+make CYCLES=PERF
 # perf requires root
-sudo ./bench_gmp
+./bench
 ```
 
 To compile the GMP benchmarks that uses PMU registers for cycle counting, run
 ```bash
-make bench_gmp CYCLES=PMU
-./bench_gmp
+make CYCLES=PMU
+./bench
 ```
 (If you see an `Illegal Instruction` exception that likely means you did not 
 enable access to PMU register from user mode. You will have to install a kernel
@@ -47,22 +47,13 @@ module to do so. See e.g., [here](https://github.com/mupq/pqax/tree/main/enable_
 
 To compile the GMP benchmarks that uses Apple's KPC framework (which works on both x86_64 and AArch64), run 
 ```bash
-make bench_gmp CYCLES=MAC
+make CYCLES=MAC, VERBOSE=TRUE
 # KPC requires root
-sudo ./bench_gmp
+./bench
 ```
 
-(Note that this code currently does not work on the Apple M4. If you need 
-benchmarking on the Apple M4, refer to [this framework](https://gist.github.com/ibireme/173517c208c7dc333ba962c1f0d67d12)).
-
-
-To compile the Karatsuba benchmarks that uses `perf` for cycle counting, run
+To see computation result, turn on verbose mode
 ```bash
-make bench_karatsuba CYCLES=PERF
-sudo ./bench_karatsuba
-```
-To compile the all benchmarks that uses `perf` for cycle counting, run
-```bash
-make all CYCLES=PERF
-sudo ./bench_karatsuba && ./bench_gmp
+make CYCLES=PERF VERBOSE=TRUE 
+./bench
 ```
