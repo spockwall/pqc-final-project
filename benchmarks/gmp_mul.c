@@ -22,13 +22,6 @@ void bench_gmp(uint32_t *A, uint32_t *B)
     mpz_import(a, LIMBS_NUM, -1, sizeof(uint32_t), 0, 0, A);
     mpz_import(b, LIMBS_NUM, -1, sizeof(uint32_t), 0, 0, B);
 
-#ifdef VERBOSE
-    printf("------------------------------------------\n");
-
-    gmp_printf("A = %Zd\n", a);
-    gmp_printf("B = %Zd\n", b);
-#endif
-
     for (i = 0; i < NTESTS; i++)
     {
         for (j = 0; j < NWARMUP; j++)
@@ -53,6 +46,9 @@ void bench_gmp(uint32_t *A, uint32_t *B)
     print_benchmark_results("mpz_mul", cycles);
 
 #ifdef VERBOSE
+    printf("------------------------------------------\n");
+    gmp_printf("A = %Zd\n", a);
+    gmp_printf("B = %Zd\n", b);
     gmp_printf("Result = %Zd\n", result);
     printf("------------------------------------------\n");
 #endif

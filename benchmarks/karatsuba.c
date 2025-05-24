@@ -11,7 +11,7 @@
 #include "karatsuba.h"
 
 // ---------- tiny carry-aware school-book for n = 8 ----------------
-// static inline void sb8_mul(uint32_t *restrict dst,
+//static inline void sb8_mul(uint32_t *restrict dst,
 //                           const uint32_t *restrict A,
 //                           const uint32_t *restrict B)
 //{

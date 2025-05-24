@@ -17,14 +17,14 @@ int main()
     generate_random_bigint(A, LIMBS_NUM * BITS_PER_LIMB);
     generate_random_bigint(B, LIMBS_NUM * BITS_PER_LIMB);
 
-    // GMP multiplication benchmark
     enable_cyclecounter();
-    bench_gmp(A, B);
-    disable_cyclecounter();
-
+    
     // Karatsuba multiplication benchmark
-    enable_cyclecounter();
     bench_karatsuba(A, B);
+    
+    // GMP multiplication benchmark
+    bench_gmp(A, B);
+
     disable_cyclecounter();
     return 0;
 }
