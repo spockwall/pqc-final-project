@@ -1,5 +1,4 @@
 #include <arm_neon.h>
-#include <gmp.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -71,11 +70,6 @@ static void karatsuba32_vec(uint32_t *restrict dst,
     if (n == 8)
     {
         sb8_mul_neon(dst, A, B);
-        return;
-    }
-    if (n == 16)
-    {
-        sb16_mul_neon(dst, A, B);
         return;
     }
 
