@@ -19,9 +19,13 @@ CFLAGS := \
 	-Wno-long-long \
 	-Wno-unknown-pragmas \
 	-Wno-unused-command-line-argument \
+	-Wno-dangling-pointer \
 	-O3 \
 	-mcpu=cortex-a72 \
+	-mtune=cortex-a72 \
+	-march=armv8-a+simd \
 	-fomit-frame-pointer \
+	-funroll-loops \
 	-std=c99 \
 	-pedantic \
 	-Ihal \
@@ -51,9 +55,16 @@ ifeq ($(VERBOSE), TRUE)
 	CFLAGS += -DVERBOSE
 endif
 
+ifeq ($(LIMBS_NUM), 32)
+	CFLAGS += -DLIMBS_NUM=32
+else ifeq ($(LIMBS_NUM), 16)
+	CFLAGS += -DLIMBS_NUM=16
+else ifeq ($(LIMBS_NUM), 8)
+	CFLAGS += -DLIMBS_NUM=8
+endif
 
 TARGET = bench
-SOURCES = hal/hal.c lib/lib.c benchmarks/gmp_mul.c benchmarks/karatsuba.c bench.c
+SOURCES = hal/hal.c lib/lib.c benchmarks/*.c bench.c
 
 $(TARGET): $(SOURCES)
 	$(CC) $(CFLAGS) $(SOURCES) -o $(TARGET) $(LDFLAGS) $(LDLIBS)

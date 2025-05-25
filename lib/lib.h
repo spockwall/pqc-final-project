@@ -10,7 +10,10 @@
 #define BITS_PER_LIMB 32
 #define BASE ((uint64_t)1 << BITS_PER_LIMB)
 #define MAX_LIMBS_NUM 32 // 支援最多 1024-bit (32 * 32-bit)
-#define LIMBS_NUM 8
+
+#ifndef LIMBS_NUM
+    #define LIMBS_NUM 16
+#endif
 
 void gmp_rand_operand_gen(mpz_t output, int n_bits);
 
