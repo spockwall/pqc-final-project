@@ -47,13 +47,19 @@ module to do so. See e.g., [here](https://github.com/mupq/pqax/tree/main/enable_
 
 To compile the GMP benchmarks that uses Apple's KPC framework (which works on both x86_64 and AArch64), run 
 ```bash
-make CYCLES=MAC, VERBOSE=TRUE
+make CYCLES=MAC
 # KPC requires root
 ./bench
 ```
 
 To see computation result, turn on verbose mode
 ```bash
-make CYCLES=PERF VERBOSE=TRUE 
+make VERBOSE=TRUE ...
+./bench
+```
+
+To define number of limbs (Allowed: 8, 16, 32), run
+```bash
+make LIMBS_NUM=8 ...
 ./bench
 ```
