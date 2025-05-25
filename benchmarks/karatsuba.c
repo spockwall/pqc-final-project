@@ -10,28 +10,6 @@
 #include "lib.h"
 #include "karatsuba.h"
 
-// ---------- tiny carry-aware school-book for n = 8 ----------------
-//static inline void sb8_mul(uint32_t *restrict dst,
-//                           const uint32_t *restrict A,
-//                           const uint32_t *restrict B)
-//{
-//    // zero the 16-limb result
-//    for (int k = 0; k < 16; ++k)
-//        dst[k] = 0;
-
-//    for (int i = 0; i < 8; ++i)
-//    {
-//        uint64_t carry = 0;
-//        for (int j = 0; j < 8; ++j)
-//        {
-//            uint64_t t = (uint64_t)A[i] * B[j] + dst[i + j] + carry;
-//            dst[i + j] = (uint32_t)t;
-//            carry = t >> 32;
-//        }
-//        dst[i + 8] += (uint32_t)carry; // final carry out
-//    }
-//}
-
 // dst[16] – zeroed by caller or earlier code
 static inline void sb8_mul_neon(uint32_t *dst,
                                 const uint32_t *A,
@@ -93,6 +71,11 @@ static void karatsuba32_vec(uint32_t *restrict dst,
     if (n == 8)
     {
         sb8_mul_neon(dst, A, B);
+        return;
+    }
+    if (n == 16)
+    {
+        sb16_mul_neon(dst, A, B);
         return;
     }
 
