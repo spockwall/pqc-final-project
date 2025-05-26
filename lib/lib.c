@@ -57,8 +57,10 @@ void generate_random_bigint(uint32_t *output, int n_bits)
     for (int i = 0; i < n_limbs; i++)
     {
         output[i] = rand() % BASE;
+        output[i] &= RADIX30; // ensure each limb is in the range [0, 2^30)
     }
 }
+
 // print the median of the benchmarking results
 static void print_median(const char *txt, uint64_t cyc[NTESTS])
 {

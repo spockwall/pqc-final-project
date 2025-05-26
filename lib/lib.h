@@ -6,13 +6,17 @@
 #define NITERATIONS 300
 #define NTESTS 500
 
-// Karatsuba parameters
+// big integer parameters
 #define BITS_PER_LIMB 32 // bits in a single limb
 #define BASE ((uint64_t)1 << BITS_PER_LIMB)
 #define MAX_LIMBS_NUM 2048 // support up to 65536-bits (2048 * 32-bit)
 
+/*   Every limb holds only the *low* 30 bits, i.e.   0 ≤ a[i] < 2³⁰.
+ *   The mask we need after additions/subtractions is therefore           */
+#define RADIX30 ((uint32_t)0x3fffffff)
+
 #ifndef LIMBS_NUM
-    #define LIMBS_NUM 32
+#define LIMBS_NUM 32
 #endif
 
 void gmp_rand_operand_gen(mpz_t output, int n_bits);
