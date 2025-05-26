@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>
@@ -8,6 +9,12 @@
 
 int main()
 {
+
+    if (LIMBS_NUM % 8 != 0 || LIMBS_NUM < 1 || LIMBS_NUM > MAX_LIMBS_NUM)
+    {
+        fprintf(stderr, "LIMBS_NUM must be a multiple of 8 and between 1 and %d.\n", MAX_LIMBS_NUM);
+        return 1;
+    }
     // operand size in bits
     uint32_t A[LIMBS_NUM] = {0};
     uint32_t B[LIMBS_NUM] = {0};
@@ -18,10 +25,10 @@ int main()
     generate_random_bigint(B, LIMBS_NUM * BITS_PER_LIMB);
 
     enable_cyclecounter();
-    
+
     // Karatsuba multiplication benchmark
     bench_karatsuba(A, B);
-    
+
     // GMP multiplication benchmark
     bench_gmp(A, B);
 

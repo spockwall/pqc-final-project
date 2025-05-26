@@ -33,6 +33,7 @@ CFLAGS := \
 	-Ifft \
 	-Ibenchmarks \
 	-MMD \
+	-DLIMBS_NUM=$(LIMBS_NUM) \
 	$(CFLAGS)
 
 LDFLAGS := -lgmp
@@ -53,14 +54,6 @@ endif
 # if verbose, print computation result
 ifeq ($(VERBOSE), TRUE)
 	CFLAGS += -DVERBOSE
-endif
-
-ifeq ($(LIMBS_NUM), 32)
-	CFLAGS += -DLIMBS_NUM=32
-else ifeq ($(LIMBS_NUM), 16)
-	CFLAGS += -DLIMBS_NUM=16
-else ifeq ($(LIMBS_NUM), 8)
-	CFLAGS += -DLIMBS_NUM=8
 endif
 
 TARGET = bench

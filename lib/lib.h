@@ -7,12 +7,12 @@
 #define NTESTS 500
 
 // Karatsuba parameters
-#define BITS_PER_LIMB 32
+#define BITS_PER_LIMB 32 // bits in a single limb
 #define BASE ((uint64_t)1 << BITS_PER_LIMB)
-#define MAX_LIMBS_NUM 32 // 支援最多 1024-bit (32 * 32-bit)
+#define MAX_LIMBS_NUM 2048 // support up to 65536-bits (2048 * 32-bit)
 
 #ifndef LIMBS_NUM
-    #define LIMBS_NUM 16
+    #define LIMBS_NUM 32
 #endif
 
 void gmp_rand_operand_gen(mpz_t output, int n_bits);
