@@ -10,8 +10,10 @@
 #include "ntt.h"
 #include "ntt_helpers.h"
 
+#define MAX_N 2048
+
 //  Twiddle tables – initialised once
-static uint32_t Wfwd[32], Winv[32];
+static uint32_t Wfwd[MAX_N], Winv[MAX_N];
 static unsigned W_log_max = 0;
 static int W_ready = 0;
 
@@ -118,19 +120,16 @@ static void ntt32_vec(uint32_t *c,
                       const uint32_t *b,
                       unsigned m)
 {
-    // TODO: define logn and m correctly
-    unsigned logn = m + 1;
-    unsigned n = 1u << logn; // transform size
+    unsigned logn = log2n(m) + 1; // m is expected to be a power of 2
+    unsigned n = 2 * m;           // n = 2^logn ≥ m
 
-    static uint32_t A[64], B[64]; // n ≤ 64 here
+    static uint32_t A[MAX_N], B[MAX_N]; // n ≤ 64 here
 
     for (uint32_t i = 0; i < n; ++i)
     {
         A[i] = (i < m) ? (a[i] & RADIX30) : 0;
         B[i] = (i < m) ? (b[i] & RADIX30) : 0;
     }
-
-    ntt_init(logn); // one-time twiddle init
 
     ntt(A, logn, 1, 0);
     ntt(B, logn, 1, 0);
@@ -163,7 +162,13 @@ void bench_ntt(uint32_t *A, uint32_t *B)
     uint64_t cycles[NTESTS];
     uint32_t dst[LIMBS_NUM << 1] = {0};
 
-    unsigned logn = log2n(LIMBS_NUM);
+    if (!is_power_of_2(LIMBS_NUM))
+    {
+        fprintf(stderr, "LIMBS_NUM must be a power of 2.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    unsigned logn = log2n(LIMBS_NUM) + 1;
     ntt_init(logn);
 
     for (i = 0; i < NTESTS; i++)

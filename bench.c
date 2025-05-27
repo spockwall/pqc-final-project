@@ -6,6 +6,7 @@
 #include "lib.h"
 #include "benchmarks/gmp_mul.h"
 #include "benchmarks/karatsuba.h"
+#include "benchmarks/ntt.h"
 
 int main()
 {
@@ -28,6 +29,9 @@ int main()
 
     // Karatsuba multiplication benchmark
     bench_karatsuba(A, B);
+
+    // NTT multiplication benchmark
+    bench_ntt(A, B);
 
     // GMP multiplication benchmark
     bench_gmp(A, B);
