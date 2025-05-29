@@ -7,6 +7,7 @@
 #include "benchmarks/gmp_mul.h"
 #include "benchmarks/karatsuba.h"
 #include "benchmarks/ntt.h"
+#include "benchmarks/naive_ntt.h"
 
 int main()
 {
@@ -17,11 +18,12 @@ int main()
         return 1;
     }
     // operand size in bits
-    uint32_t A[LIMBS_NUM] = {0};
-    uint32_t B[LIMBS_NUM] = {0};
+    uint32_t A[LIMBS_NUM<<1] = {0};
+    uint32_t B[LIMBS_NUM<<1] = {0};
+    
 
     // generate random big integers A and B
-    srand((unsigned int)time(NULL));
+    srand(42);
     generate_random_bigint(A, LIMBS_NUM * BITS_PER_LIMB);
     generate_random_bigint(B, LIMBS_NUM * BITS_PER_LIMB);
 
