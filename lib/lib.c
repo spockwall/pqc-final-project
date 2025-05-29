@@ -53,11 +53,12 @@ void print_bigint(uint32_t *a, size_t n, int fmt)
 // generate a random big integer with n_bits bits
 void generate_random_bigint(uint32_t *output, int n_bits)
 {
-    int n_limbs = (n_bits + 31) / 32;
+    int n_limbs = (n_bits + BITS_PER_LIMB - 1) / BITS_PER_LIMB;
+    printf("Generating random bigint with %d bits (%d limbs)\n", n_bits, n_limbs);
     for (int i = 0; i < n_limbs; i++)
     {
-        output[i] = rand() % BASE;
-        output[i] &= RADIX30; // ensure each limb is in the range [0, 2^30)
+        output[i] = rand() % (1 << BITS_PER_LIMB); // generate a random limb
+        output[i] &= RADIX12;                      // ensure each limb is in the range [0, 2^30)
     }
 }
 
@@ -113,4 +114,18 @@ void print_computation_result(const char *txt, uint32_t *A, uint32_t *B, uint32_
     print_bigint(B, n_limbs, fmt);
     printf("Result =");
     print_bigint(dst, n_limbs << 1, fmt);
+}
+
+void print_big_hex(const uint32_t *x, unsigned limbs)
+{
+    for (unsigned i = 0; i < limbs; ++i)
+        printf("%08x", x[i]);
+    printf("\n");
+}
+
+void print_big_hex_radix12(const uint32_t *x, unsigned limbs)
+{
+    for (unsigned i = 0; i < limbs; ++i)
+        printf("%03x", x[i]);
+    printf("\n");
 }

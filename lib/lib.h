@@ -10,6 +10,7 @@
 #define BITS_PER_LIMB 12 // bits in a single limb
 #define BASE ((uint64_t)1 << BITS_PER_LIMB)
 #define MAX_LIMBS_NUM 2048 // support up to 65536-bits (2048 * 32-bit)
+#define N (LIMBS_NUM << 1) // transform size = 32,(Degree of NTT output)
 
 /*   Every limb holds only the *low* 30 bits, i.e.   0 ≤ a[i] < 2³⁰.
  *   The mask we need after additions/subtractions is therefore           */
@@ -30,3 +31,6 @@ void generate_random_bigint(uint32_t *output, int n_bits);
 int cmp_uint64_t(const void *a, const void *b);
 void print_benchmark_results(const char *txt, uint64_t cycles[NTESTS]);
 void print_computation_result(const char *txt, uint32_t *A, uint32_t *B, uint32_t *dst, size_t n_limbs, int fmt);
+
+void print_big_hex(const uint32_t *x, unsigned limbs);
+void print_big_hex_radix12(const uint32_t *x, unsigned limbs);
