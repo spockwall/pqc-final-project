@@ -25,7 +25,7 @@ static inline uint32_t montmul(uint32_t a, uint32_t b)
     return (u >= Q) ? u - Q : (uint32_t)u;
 }
 
-static inline uint32_t pow_mod(uint32_t g, uint32_t e)
+static inline uint32_t mont_pow_mod(uint32_t g, uint32_t e)
 {
     uint32_t r = 1;
     while (e)
@@ -33,6 +33,19 @@ static inline uint32_t pow_mod(uint32_t g, uint32_t e)
         if (e & 1)
             r = montmul(r, g);
         g = montmul(g, g);
+        e >>= 1;
+    }
+    return r;
+}
+
+static inline uint32_t pow_mod(uint32_t g, uint32_t e)
+{
+    uint32_t r = 1;
+    while (e)
+    {
+        if (e & 1)
+            r = mul_mod(r, g);
+        g = mul_mod(g, g);
         e >>= 1;
     }
     return r;
