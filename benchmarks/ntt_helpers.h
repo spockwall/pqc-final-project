@@ -11,6 +11,10 @@ static inline uint32_t sub_mod(uint32_t a, uint32_t b)
 {
     return (a >= b) ? a - b : (uint32_t)(Q + (uint64_t)a - b);
 }
+static inline uint32_t mul_mod(uint32_t a, uint32_t b)
+{
+    return (uint32_t)(((uint64_t)a * b) % Q);
+}
 
 // 32×32-bit Montgomery multiply, branch-free
 static inline uint32_t montmul(uint32_t a, uint32_t b)
