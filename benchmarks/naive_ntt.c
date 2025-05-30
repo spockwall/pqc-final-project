@@ -31,12 +31,6 @@ static void ntt_init(void)
     inv_len = pow_mod(N, Q - 2U);
 }
 
-static uint32_t modinv(uint32_t x)
-{
-    // MOD is prime ⇒ x^(MOD‑2) ≡ x^‑1 (mod MOD)
-    return pow_mod(x, Q - 2);
-}
-
 // bit‑reversal permutation (in‑place)
 static void bit_reverse(uint32_t *x)
 {
@@ -64,7 +58,7 @@ static void bit_reverse(uint32_t *x)
 // ---------------------------------------------------------
 static void ntt(uint32_t *x, int invert)
 {
-    uint32_t w = pow_mod(G, Q / N);
+    uint32_t w = pow_mod(G, (Q - 1) / N);
     if (!invert)
         w = modinv(w);
 
@@ -77,8 +71,8 @@ static void ntt(uint32_t *x, int invert)
             {
                 uint32_t u = x[j];
                 uint32_t v = x[j + k / 2];
-                x[j] = ((uint64_t)u + v) % Q;
-                x[j + k / 2] = mul_mod((u + Q - v) % Q, wn);
+                x[j] = add_mod(u, v);
+                x[j + k / 2] = mul_mod(sub_mod(u, v), wn);
             }
             wn = mul_mod(wn, w);
         }
@@ -104,10 +98,10 @@ static void multiply(uint32_t *dst, uint32_t *fa, uint32_t *fb)
     ntt(dst, 1);
 
     // carry propagation in radix‑2^12
-    for (unsigned i = 0; i < N; ++i)
+    for (unsigned i = 0; i < N - 1; ++i)
     {
-        dst[i + 1] += dst[i] / BASE;
-        dst[i] %= BASE;
+        dst[i + 1] += dst[i] >> BITS_PER_LIMB; // BITS_per_limb = 12
+        dst[i] &= RADIX_MASK;
     }
 }
 
@@ -121,35 +115,33 @@ void bench_naive_ntt(const uint32_t *A, const uint32_t *B)
     uint32_t fa[N] = {0};
     uint32_t fb[N] = {0};
     // ntt_init();
-
     for (i = 0; i < NTESTS; i++)
     {
         for (j = 0; j < NWARMUP; j++)
         {
-            memcpy(fa, A, LIMBS_NUM * sizeof(uint32_t));
-            memcpy(fb, B, LIMBS_NUM * sizeof(uint32_t));
+            memcpy(fa, A, N * sizeof(uint32_t));
+            memcpy(fb, B, N * sizeof(uint32_t));
             memset(dst, 0, (N + 1) * sizeof(uint32_t));
-            multiply(dst, fa, fb); // run once to warm up
+            multiply(dst, fa, fb);
         }
 
         t0 = get_cyclecounter();
 
         for (j = 0; j < NITERATIONS; j++)
         {
-            memcpy(fa, A, LIMBS_NUM * sizeof(uint32_t));
-            memcpy(fb, B, LIMBS_NUM * sizeof(uint32_t));
+            memcpy(fa, A, N * sizeof(uint32_t));
+            memcpy(fb, B, N * sizeof(uint32_t));
             memset(dst, 0, (N + 1) * sizeof(uint32_t));
-            multiply(dst, fa, fb); // run once to warm up
+            multiply(dst, fa, fb);
         }
         t1 = get_cyclecounter();
         cycles[i] = t1 - t0;
     }
     qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
     print_benchmark_results("Naive NTT_vec", cycles);
-
-    print_big_hex_radix12(A, LIMBS_NUM);
-    print_big_hex_radix12(B, LIMBS_NUM);
-    print_big_hex_radix12(dst, N);
+    print_big_hex(A, LIMBS_NUM);
+    print_big_hex(B, LIMBS_NUM);
+    print_big_hex(dst, N);
 
 #ifdef VERBOSE
     printf("------------------------------------------\n");
