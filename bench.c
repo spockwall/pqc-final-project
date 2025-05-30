@@ -4,6 +4,7 @@
 #include <time.h>
 #include "hal.h"
 #include "lib.h"
+#include "benchmarks/ntt_helpers.h"
 #include "benchmarks/gmp_mul.h"
 #include "benchmarks/karatsuba.h"
 #include "benchmarks/ntt.h"
@@ -33,6 +34,9 @@ int main()
 
     // Naive NTT multiplication benchmark
     bench_naive_ntt(A, B);
+
+    // NTT multiplication benchmark
+    bench_ntt(A, B);
 
     // GMP multiplication benchmark
     bench_gmp(A, B);
