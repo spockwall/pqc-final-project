@@ -58,7 +58,7 @@ void generate_random_bigint(uint32_t *output, int n_bits)
     for (int i = 0; i < n_limbs; i++)
     {
         output[i] = rand() % (1 << BITS_PER_LIMB); // generate a random limb
-        output[i] &= RADIX12;                      // ensure each limb is in the range [0, 2^30)
+        output[i] &= RADIX_MASK;                   // ensure each limb is in the range [0, 2^30)
     }
 }
 
@@ -118,14 +118,17 @@ void print_computation_result(const char *txt, uint32_t *A, uint32_t *B, uint32_
 
 void print_big_hex(const uint32_t *x, unsigned limbs)
 {
-    for (unsigned i = 0; i < limbs; ++i)
-        printf("%08x", x[i]);
-    printf("\n");
-}
+    unsigned hex_digits = (BITS_PER_LIMB + 3) / 4; // ceil(bits/4)
+    if (hex_digits < 1 || hex_digits > 8)
+    {
+        fprintf(stderr, "Unsupported hex digits: %u\n", hex_digits);
+        exit(EXIT_FAILURE);
+    }
 
-void print_big_hex_radix12(const uint32_t *x, unsigned limbs)
-{
+    char fmt[16];
+    sprintf(fmt, "%%0%ux", hex_digits); // 例如 %03x, %05x, %08x
+
     for (unsigned i = 0; i < limbs; ++i)
-        printf("%03x", x[i]);
+        printf(fmt, x[i]);
     printf("\n");
 }

@@ -15,7 +15,7 @@
 /*   Every limb holds only the *low* 30 bits, i.e.   0 ≤ a[i] < 2³⁰.
  *   The mask we need after additions/subtractions is therefore           */
 #define RADIX30 ((uint32_t)0x3fffffff)
-#define RADIX12 ((uint32_t)0xfff) // 2^12 - 1
+#define RADIX_MASK ((uint32_t)BASE - 1) // 2^30 - 1
 
 #ifndef LIMBS_NUM
 #define LIMBS_NUM 16
@@ -33,4 +33,3 @@ void print_benchmark_results(const char *txt, uint64_t cycles[NTESTS]);
 void print_computation_result(const char *txt, uint32_t *A, uint32_t *B, uint32_t *dst, size_t n_limbs, int fmt);
 
 void print_big_hex(const uint32_t *x, unsigned limbs);
-void print_big_hex_radix12(const uint32_t *x, unsigned limbs);
