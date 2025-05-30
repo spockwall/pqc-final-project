@@ -16,9 +16,7 @@
 //--------------------------------------------------------------------------
 static uint32_t w_tbl[N];  // forward roots  w^k
 static uint32_t i_wtbl[N]; // inverse roots  w^{‑k}
-static uint32_t n_inv;    // n^{‑1} mod Q  (for final scaling)
-
-static uint32x4_t vmask = {RADIX_MASK, RADIX_MASK, RADIX_MASK, RADIX_MASK}; // 0xfff
+static uint32_t n_inv;     // n^{‑1} mod Q  (for final scaling)
 
 static void ntt_init(void)
 {
@@ -34,7 +32,7 @@ static void ntt_init(void)
 }
 
 // bit‑reversal permutation (in‑place)
-static void bit_reverse(uint32_t *x)
+static inline void bit_reverse(uint32_t *x)
 {
     unsigned j = 0;
     for (unsigned i = 1; i < N; ++i)
@@ -75,7 +73,6 @@ static void ntt(uint32_t *x, int invert)
             wn = invert ? w_tbl[step * (i + 1) % N] : i_wtbl[step * (i + 1) % N];
         }
     }
-
     bit_reverse(x);
 
     if (!invert)
@@ -92,7 +89,6 @@ static void multiply(uint32_t *dst, uint32_t *fa, uint32_t *fb)
     for (unsigned i = 0; i < N; ++i)
         dst[i] = mul_mod(fa[i], fb[i]);
     ntt(dst, 1);
-
     // carry propagation in radix‑2^12
     for (unsigned i = 0; i < N; ++i)
     {
