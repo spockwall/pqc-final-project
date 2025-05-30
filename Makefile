@@ -20,6 +20,8 @@ CFLAGS := \
 	-Wno-unknown-pragmas \
 	-Wno-unused-command-line-argument \
 	-Wno-dangling-pointer \
+	-Wno-unused-function \
+	-Wno-unused-variable \
 	-O3 \
 	-mcpu=cortex-a72 \
 	-mtune=cortex-a72 \
