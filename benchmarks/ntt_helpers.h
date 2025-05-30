@@ -16,23 +16,35 @@ static inline uint32_t mul_mod(uint32_t a, uint32_t b)
     return (uint32_t)(((uint64_t)a * b) % Q);
 }
 
-// 32×32-bit Montgomery multiply, branch-free
-static inline uint32_t montmul(uint32_t a, uint32_t b)
+// 32×32 → 32 Montgomery 乘：回傳 a·b·R^{-1} (mod Q)
+static inline uint32_t mont_mul(uint32_t a, uint32_t b)
 {
-    uint64_t t = (uint64_t)a * b;
-    uint32_t m = (uint32_t)t * QINV;
+    uint64_t t = (uint64_t)a * b;    /* 0..(Q-1)^2 < 2^62            */
+    uint32_t m = (uint32_t)t * QINV; /* (t mod R)*(-Q^{-1}) mod R    */
     uint64_t u = (t + (uint64_t)m * Q) >> 32;
-    return (u >= Q) ? u - Q : (uint32_t)u;
+    return u >= Q ? (uint32_t)(u - Q) : (uint32_t)u;
+}
+
+static inline uint32_t to_mont(uint32_t x)
+{
+    /* x·R mod Q = mont_mul(x, R^2)          (因為 mont_mul 會再乘 R^{-1}) */
+    return mont_mul(x, R2INV);
+}
+
+// 從 Montgomery 域拿掉因子 R：x·R^{-1} mod Q
+static inline uint32_t from_mont(uint32_t x)
+{
+    return mont_mul(x, 1); /* a·1·R^{-1} = a·R^{-1} */
 }
 
 static inline uint32_t mont_pow_mod(uint32_t g, uint32_t e)
 {
-    uint32_t r = 1;
+    uint32_t r = to_mont(1);
     while (e)
     {
         if (e & 1)
-            r = montmul(r, g);
-        g = montmul(g, g);
+            r = mont_mul(r, g);
+        g = mont_mul(g, g);
         e >>= 1;
     }
     return r;

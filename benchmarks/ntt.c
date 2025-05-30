@@ -1,199 +1,161 @@
 #include <arm_neon.h>
 #include <inttypes.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stddef.h>
 #include <string.h>
 #include "hal.h"
-#include "lib.h"
 #include "ntt.h"
+#include "lib.h"
 #include "ntt_helpers.h"
 
-#define MAX_N 2048
+//--------------------------------------------------------------------------
+// Root tables – we need n = 64 for ≤32 limbs (2× size after convolution)
+//--------------------------------------------------------------------------
+static uint32_t wtbl[N];  // forward roots  w^k * R
+static uint32_t iwtbl[N]; // inverse roots  w^{‑k} * R
+static uint32_t n_inv;    // n^{‑1} * R mod Q  (for final scaling)
+static uint32_t mont_one; // 1 in Montgomery form
 
-//  Twiddle tables – initialised once
-static uint32_t Wfwd[MAX_N], Winv[MAX_N];
-static unsigned W_log_max = 0;
-static int W_ready = 0;
-
-// Fill Wfwd / Winv for 2^logn-point (or smaller) transforms.
-static inline void ntt_init(unsigned logn)
+static void ntt_init(void)
 {
-    if (W_ready && logn <= W_log_max)
+    uint32_t w = mont_pow_mod(to_mont(G), (Q - 1U) / N);
+    uint32_t iw = mont_pow_mod(w, Q - 2U); // w^{‑1}
+    mont_one = to_mont(1U);
+
+    wtbl[0] = iwtbl[0] = mont_one;
+    for (size_t i = 1; i < N; ++i)
+    {
+        wtbl[i] = mont_mul(wtbl[i - 1], w);
+        iwtbl[i] = mont_mul(iwtbl[i - 1], iw);
+    }
+    n_inv = mont_pow_mod(to_mont(N), Q - 2U); // N^{‑1} * R mod Q
+}
+
+// bit‑reversal permutation (in‑place)
+static inline void bit_reverse(uint32_t *x)
+{
+    unsigned j = 0;
+    for (unsigned i = 1; i < N; ++i)
+    {
+        unsigned bit = N >> 1;
+        while (j & bit)
+        {
+            j ^= bit;
+            bit >>= 1;
+        }
+        j ^= bit;
+        if (i < j)
+        {
+            uint32_t tmp = x[i];
+            x[i] = x[j];
+            x[j] = tmp;
+        }
+    }
+}
+
+static void ntt_vec(uint32_t *x, int invert)
+{
+    // ---------------- 主循環：同樣 m 由 N/2 → 1 ----------------
+    for (unsigned m = N >> 1, step = 1; m; m >>= 1, step <<= 1)
+    {
+        const unsigned seg = m << 1;          // 一段 = 2m
+        for (unsigned s = 0; s < N; s += seg) // 每段各做一次蝴蝶輪
+        {
+            uint32_t w = mont_one; // 本段的 twiddle 起點
+            for (unsigned i = 0; i < m; ++i)
+            {
+                unsigned j = s + i;  // 上半段索引
+                unsigned j2 = j + m; // 下半段索引 (= j+m)
+
+                uint32_t u = x[j];
+                uint32_t v = x[j2];
+                x[j] = add_mod(u, v);
+                x[j2] = mont_mul(sub_mod(u, v), w);
+                w = invert ? wtbl[step * (i + 1) % N] : iwtbl[step * (i + 1) % N];
+            }
+        }
+    }
+
+    bit_reverse(x);
+
+    // ---------------- 反 NTT 時再乘 n^{-1} ----------------
+    if (!invert)
         return;
 
-    uint32_t n = 1u << logn;
-    uint32_t root = pow_mod(G, (Q - 1) / n);
-    uint32_t root_i = pow_mod(root, Q - 2); /* inverse via Fermat */
-
-    Wfwd[0] = Winv[0] = 1;
-    for (uint32_t i = 1; i < n / 2; ++i)
-    {
-        Wfwd[i] = montmul(Wfwd[i - 1], root);
-        Winv[i] = montmul(Winv[i - 1], root_i);
-    }
-    W_log_max = logn;
-    W_ready = 1;
+    for (unsigned i = 0; i < N; ++i)
+        x[i] = mont_mul(x[i], n_inv);
 }
 
-// Vectorised butterfly (handles 4 butterflies at once)
-// inv = 0 ⇒ forward  (a,b) → (a+w·b, a−w·b)
-// inv = 1 ⇒ inverse  (a,b) → (a+b, (a−b)·w)
-static inline void butterfly4(uint32_t *a, uint32_t *b,
-                              uint32_t w, int inv)
+static void multiply(uint32_t *dst, uint32_t *fa, uint32_t *fb)
 {
-    uint32x4_t va = vld1q_u32(a);
-    uint32x4_t vb = vld1q_u32(b);
-    uint32x4_t vQ = vdupq_n_u32(Q);
-    uint32x4_t vw = vdupq_n_u32(w);
+    ntt_vec(fa, 0);
+    ntt_vec(fb, 0);
+    for (unsigned i = 0; i < N; ++i)
+        dst[i] = mont_mul(fa[i], fb[i]);
+    ntt_vec(dst, 1);
 
-    // results
-    uint32x4_t x, y;
+    for (unsigned i = 0; i < N; ++i)
+        dst[i] = from_mont(dst[i]);
 
-    if (!inv)
+    // carry propagation in radix‑2^12
+    for (unsigned i = 0; i < N; ++i)
     {
-        /* t = w * b */
-        uint64x2_t lo = vmull_u32(vget_low_u32(vb), vget_low_u32(vw));
-        uint64x2_t hi = vmull_u32(vget_high_u32(vb), vget_high_u32(vw));
-        uint32x4_t vt = vcombine_u32(vmovn_u64(lo), vmovn_u64(hi));
-
-        x = vaddq_u32(va, vt);
-        y = vsubq_u32(va, vt);
-    }
-    else
-    {
-        uint32x4_t vs = vsubq_u32(va, vb);
-        uint64x2_t lo = vmull_u32(vget_low_u32(vs), vget_low_u32(vw));
-        uint64x2_t hi = vmull_u32(vget_high_u32(vs), vget_high_u32(vw));
-        uint32x4_t vt = vcombine_u32(vmovn_u64(lo), vmovn_u64(hi));
-
-        x = vaddq_u32(va, vb); // a + b
-        y = vt;
-    }
-
-    // conditional reduction (lazy but safe)
-    uint32x4_t x_ge = vcgeq_u32(x, vQ);
-    uint32x4_t y_ge = vcgeq_u32(y, vQ);
-    x = vsubq_u32(x, vandq_u32(x_ge, vQ));
-    y = vsubq_u32(y, vandq_u32(y_ge, vQ));
-
-    vst1q_u32(a, x);
-    vst1q_u32(b, y);
-}
-
-// Unified recursive NTT and iNTT
-// inv = 0 ⇒ forward NTT
-// inv = 1 ⇒ inverse NTT
-static void ntt(uint32_t *a, unsigned logn, unsigned step, int inv)
-{
-    if (logn == 0)
-        return;
-
-    unsigned half = 1u << (logn - 1);
-
-    if (!inv)
-    {
-        ntt(a, logn - 1, step * 2, inv);
-        ntt(a + step, logn - 1, step * 2, inv);
-
-        for (unsigned j = 0; j < half; j += 4)
-            butterfly4(a + j * step,
-                       a + (j + half) * step,
-                       Wfwd[j], 0);
-    }
-    else
-    {
-        for (unsigned j = 0; j < half; j += 4)
-            butterfly4(a + j * step,
-                       a + (j + half) * step,
-                       Winv[j], 1);
-
-        ntt(a, logn - 1, step * 2, inv);
-        ntt(a + step, logn - 1, step * 2, inv);
-    }
-}
-
-//  Big-int multiplication via NTT
-static void ntt32_vec(uint32_t *c,
-                      const uint32_t *a,
-                      const uint32_t *b,
-                      unsigned m)
-{
-    unsigned logn = log2n(m) + 1; // m is expected to be a power of 2
-    unsigned n = 2 * m;           // n = 2^logn ≥ m
-
-    static uint32_t A[MAX_N], B[MAX_N]; // n ≤ 64 here
-
-    for (uint32_t i = 0; i < n; ++i)
-    {
-        A[i] = (i < m) ? (a[i] & RADIX30) : 0;
-        B[i] = (i < m) ? (b[i] & RADIX30) : 0;
-    }
-
-    ntt(A, logn, 1, 0);
-    ntt(B, logn, 1, 0);
-
-    for (unsigned i = 0; i < n; ++i)
-        A[i] = montmul(A[i], B[i]); // pointwise mult
-
-    ntt(A, logn, 1, 1); // inverse NTT
-
-    uint32_t n_inv = pow_mod(1, Q - 1 - (Q - 1) / n); // n⁻¹ in Montgomery form
-    for (unsigned i = 0; i < n; ++i)
-        A[i] = montmul(A[i], n_inv);
-
-    // carry propagation in radix-2³⁰
-    uint64_t carry = 0;
-    for (unsigned i = 0; i < 2 * m; ++i)
-    {
-        uint64_t t = carry + (i < n ? A[i] : 0);
-        c[i] = (uint32_t)(t & RADIX30);
-        carry = t >> 30;
+        dst[i + 1] += dst[i] >> BITS_PER_LIMB; // BITS_per_limb = 12
+        dst[i] &= RADIX_MASK;
     }
 }
 
 void bench_ntt(uint32_t *A, uint32_t *B)
 {
     // gnereate random A and B
-
     int i, j;
     uint64_t t0, t1;
     uint64_t cycles[NTESTS];
-    uint32_t dst[LIMBS_NUM << 1] = {0};
+    uint32_t dst[N + 1] = {0};
+    uint32_t fa[N] = {0};
+    uint32_t fb[N] = {0};
 
-    if (!is_power_of_2(LIMBS_NUM))
+    for (unsigned k = 0; k < N / 2; ++k)
     {
-        fprintf(stderr, "LIMBS_NUM must be a power of 2.\n");
-        exit(EXIT_FAILURE);
+        A[k] = to_mont(A[k]);
+        B[k] = to_mont(B[k]);
     }
 
-    unsigned logn = log2n(LIMBS_NUM) + 1;
-    ntt_init(logn);
+    ntt_init();
 
     for (i = 0; i < NTESTS; i++)
     {
         for (j = 0; j < NWARMUP; j++)
         {
-            ntt32_vec(dst, A, B, LIMBS_NUM);
+            memcpy(fa, A, N * sizeof(uint32_t));
+            memcpy(fb, B, N * sizeof(uint32_t));
+            memset(dst, 0, (N + 1) * sizeof(uint32_t));
+            multiply(dst, fa, fb);
         }
 
         t0 = get_cyclecounter();
 
         for (j = 0; j < NITERATIONS; j++)
         {
-            ntt32_vec(dst, A, B, LIMBS_NUM);
+            memcpy(fa, A, N * sizeof(uint32_t));
+            memcpy(fb, B, N * sizeof(uint32_t));
+            memset(dst, 0, (N + 1) * sizeof(uint32_t));
+            multiply(dst, fa, fb);
         }
         t1 = get_cyclecounter();
-
         cycles[i] = t1 - t0;
     }
     qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
-    print_benchmark_results("NTT_vec", cycles);
+    print_benchmark_results("Montgomery NTT_vec", cycles);
+    print_big_hex(A, LIMBS_NUM);
+    print_big_hex(B, LIMBS_NUM);
+    print_big_hex(dst, N);
 
 #ifdef VERBOSE
     printf("------------------------------------------\n");
-    print_computation_result("NTT multiplication", A, B, dst, LIMBS_NUM, 0);
+    print_computation_result("Montgomery NTT multiplication", A, B, dst, LIMBS_NUM, 0);
     printf("------------------------------------------\n");
 #endif
 
