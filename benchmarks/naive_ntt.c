@@ -14,21 +14,23 @@
 //--------------------------------------------------------------------------
 // Root tables – we need n = 64 for ≤32 limbs (2× size after convolution)
 //--------------------------------------------------------------------------
-static uint32_t wtbl[N];  // forward roots  w^k
-static uint32_t iwtbl[N]; // inverse roots  w^{‑k}
-static uint32_t inv_len;  // n^{‑1} mod Q  (for final scaling)
+static uint32_t w_tbl[N];  // forward roots  w^k
+static uint32_t i_wtbl[N]; // inverse roots  w^{‑k}
+static uint32_t n_inv;    // n^{‑1} mod Q  (for final scaling)
+
+static uint32x4_t vmask = {RADIX_MASK, RADIX_MASK, RADIX_MASK, RADIX_MASK}; // 0xfff
 
 static void ntt_init(void)
 {
     uint32_t w = pow_mod(G, (Q - 1U) / N);
     uint32_t iw = pow_mod(w, Q - 2U); // w^{‑1}
-    wtbl[0] = iwtbl[0] = 1U;
+    w_tbl[0] = i_wtbl[0] = 1U;
     for (size_t i = 1; i < N; ++i)
     {
-        wtbl[i] = mul_mod(wtbl[i - 1], w);
-        iwtbl[i] = mul_mod(iwtbl[i - 1], iw);
+        w_tbl[i] = mul_mod(w_tbl[i - 1], w);
+        i_wtbl[i] = mul_mod(i_wtbl[i - 1], iw);
     }
-    inv_len = pow_mod(N, Q - 2U);
+    n_inv = pow_mod(N, Q - 2U); // N^{‑1} mod Q
 }
 
 // bit‑reversal permutation (in‑place)
@@ -58,11 +60,7 @@ static void bit_reverse(uint32_t *x)
 // ---------------------------------------------------------
 static void ntt(uint32_t *x, int invert)
 {
-    uint32_t w = pow_mod(G, (Q - 1) / N);
-    if (!invert)
-        w = modinv(w);
-
-    for (unsigned k = N; k >= 2; k >>= 1)
+    for (unsigned step = 1, k = N; k >= 2; k >>= 1, step <<= 1)
     {
         uint32_t wn = 1;
         for (unsigned i = 0; i < k / 2; ++i)
@@ -74,9 +72,8 @@ static void ntt(uint32_t *x, int invert)
                 x[j] = add_mod(u, v);
                 x[j + k / 2] = mul_mod(sub_mod(u, v), wn);
             }
-            wn = mul_mod(wn, w);
+            wn = invert ? w_tbl[step * (i + 1) % N] : i_wtbl[step * (i + 1) % N];
         }
-        w = mul_mod(w, w);
     }
 
     bit_reverse(x);
@@ -84,7 +81,6 @@ static void ntt(uint32_t *x, int invert)
     if (!invert)
         return;
 
-    uint32_t n_inv = modinv(N);
     for (unsigned i = 0; i < N; ++i)
         x[i] = mul_mod(x[i], n_inv);
 }
@@ -98,7 +94,7 @@ static void multiply(uint32_t *dst, uint32_t *fa, uint32_t *fb)
     ntt(dst, 1);
 
     // carry propagation in radix‑2^12
-    for (unsigned i = 0; i < N - 1; ++i)
+    for (unsigned i = 0; i < N; ++i)
     {
         dst[i + 1] += dst[i] >> BITS_PER_LIMB; // BITS_per_limb = 12
         dst[i] &= RADIX_MASK;
@@ -114,7 +110,7 @@ void bench_naive_ntt(const uint32_t *A, const uint32_t *B)
     uint32_t dst[N + 1] = {0};
     uint32_t fa[N] = {0};
     uint32_t fb[N] = {0};
-    // ntt_init();
+    ntt_init();
     for (i = 0; i < NTESTS; i++)
     {
         for (j = 0; j < NWARMUP; j++)
