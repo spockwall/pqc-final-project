@@ -18,9 +18,8 @@ int main()
         return 1;
     }
     // operand size in bits
-    uint32_t A[LIMBS_NUM<<1] = {0};
-    uint32_t B[LIMBS_NUM<<1] = {0};
-    
+    uint32_t A[LIMBS_NUM << 1] = {0};
+    uint32_t B[LIMBS_NUM << 1] = {0};
 
     // generate random big integers A and B
     srand(42);
@@ -32,8 +31,8 @@ int main()
     // Karatsuba multiplication benchmark
     bench_karatsuba(A, B);
 
-    // NTT multiplication benchmark
-    bench_ntt(A, B);
+    // Naive NTT multiplication benchmark
+    bench_naive_ntt(A, B);
 
     // GMP multiplication benchmark
     bench_gmp(A, B);
