@@ -29,15 +29,14 @@ int main()
     enable_cyclecounter();
 
     // ----big integers with 32 bits data per limbs-----------
-    generate_random_bigint(A, LIMBS_NUM * BITS_PER_LIMB, 0);
-    generate_random_bigint(B, LIMBS_NUM * BITS_PER_LIMB, 0);
+    generate_random_bigint(A, LIMBS_NUM * 32, 0);
+    generate_random_bigint(B, LIMBS_NUM * 32, 0);
 
     // GMP multiplication benchmark
     bench_gmp(A, B);
 
     // Karatsuba multiplication benchmark
     bench_karatsuba(A, B);
-    //
 
     // -----------big integers with masked limbs-------------
     generate_random_bigint(A, LIMBS_NUM * BITS_PER_LIMB, 1);
