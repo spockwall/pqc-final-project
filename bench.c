@@ -9,6 +9,7 @@
 #include "benchmarks/karatsuba.h"
 #include "benchmarks/ntt.h"
 #include "benchmarks/naive_ntt.h"
+#include "benchmarks/ntt_vec.h"
 
 int main()
 {
@@ -37,6 +38,9 @@ int main()
 
     // NTT multiplication benchmark
     bench_ntt(A, B);
+
+    // NTT multiplication using arm neon benchmark
+    bench_ntt_vec(A, B);
 
     // GMP multiplication benchmark
     bench_gmp(A, B);
