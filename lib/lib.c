@@ -50,15 +50,28 @@ void print_bigint(uint32_t *a, size_t n, int fmt)
     mpz_clear(z);
 }
 
-// generate a random big integer with n_bits bits
-void generate_random_bigint(uint32_t *output, int n_bits)
+// generate a random big integer with n_bits limbs
+// if masked is one (true), each limb is in the range [0, 2^{BITS_PER_LIMB})
+void generate_random_bigint(uint32_t *output, int n_bits, int masked)
 {
-    int n_limbs = (n_bits + BITS_PER_LIMB - 1) / BITS_PER_LIMB;
-    printf("Generating random bigint with %d bits (%d limbs)\n", n_bits, n_limbs);
-    for (int i = 0; i < n_limbs; i++)
+    if (masked)
     {
-        output[i] = rand() % (1 << BITS_PER_LIMB); // generate a random limb
-        output[i] &= RADIX_MASK;                   // ensure each limb is in the range [0, 2^30)
+        int n_limbs = (n_bits + BITS_PER_LIMB - 1) / BITS_PER_LIMB;
+        printf("Generating random bigint with %d bits (%d limbs)\n", n_bits, n_limbs);
+        for (int i = 0; i < n_limbs; i++)
+        {
+            output[i] = (uint64_t)rand() % (1 << BITS_PER_LIMB);
+            output[i] &= RADIX_MASK;
+        }
+    }
+    else
+    {
+        int n_limbs = (n_bits + 31) / 32; // 每個 limb 32 bits
+        printf("Generating random bigint with %d bits (%d limbs)\n", n_bits, n_limbs);
+        for (int i = 0; i < n_limbs; i++)
+        {
+            output[i] = (uint64_t)rand() % (1ULL << 32); // 每個 limb 隨機生成 32 bits
+        }
     }
 }
 
@@ -112,7 +125,7 @@ void print_computation_result(const char *txt, uint32_t *A, uint32_t *B, uint32_
     print_bigint(A, n_limbs, fmt);
     printf("B = ");
     print_bigint(B, n_limbs, fmt);
-    printf("Result =");
+    printf("Result = ");
     print_bigint(dst, n_limbs << 1, fmt);
 }
 

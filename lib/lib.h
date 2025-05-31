@@ -25,7 +25,7 @@ void gmp_rand_operand_gen(mpz_t output, int n_bits);
 
 void print_bigint(uint32_t *a, size_t n, int fmt);
 
-void generate_random_bigint(uint32_t *output, int n_bits);
+void generate_random_bigint(uint32_t *output, int n_bits, int masked);
 
 // Benchmarking functions
 int cmp_uint64_t(const void *a, const void *b);

@@ -25,13 +25,23 @@ int main()
 
     // generate random big integers A and B
     srand(42);
-    generate_random_bigint(A, LIMBS_NUM * BITS_PER_LIMB);
-    generate_random_bigint(B, LIMBS_NUM * BITS_PER_LIMB);
 
     enable_cyclecounter();
 
+    // ----big integers with 32 bits data per limbs-----------
+    generate_random_bigint(A, LIMBS_NUM * BITS_PER_LIMB, 0);
+    generate_random_bigint(B, LIMBS_NUM * BITS_PER_LIMB, 0);
+
+    // GMP multiplication benchmark
+    bench_gmp(A, B);
+
     // Karatsuba multiplication benchmark
     bench_karatsuba(A, B);
+    //
+
+    // -----------big integers with masked limbs-------------
+    generate_random_bigint(A, LIMBS_NUM * BITS_PER_LIMB, 1);
+    generate_random_bigint(B, LIMBS_NUM * BITS_PER_LIMB, 1);
 
     // Naive NTT multiplication benchmark
     bench_naive_ntt(A, B);
@@ -41,9 +51,6 @@ int main()
 
     // NTT multiplication using arm neon benchmark
     bench_ntt_vec(A, B);
-
-    // GMP multiplication benchmark
-    bench_gmp(A, B);
 
     disable_cyclecounter();
     return 0;
