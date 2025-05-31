@@ -31,5 +31,6 @@ void generate_random_bigint(uint32_t *output, int n_bits);
 int cmp_uint64_t(const void *a, const void *b);
 void print_benchmark_results(const char *txt, uint64_t cycles[NTESTS]);
 void print_computation_result(const char *txt, uint32_t *A, uint32_t *B, uint32_t *dst, size_t n_limbs, int fmt);
+void print_computation_result_ntt(const char *txt, const uint32_t *A, const uint32_t *B, const uint32_t *dst, size_t n_limbs);
 
 void print_big_hex(const uint32_t *x, unsigned limbs);

@@ -172,12 +172,14 @@ static void multiply(uint32_t *dst, uint32_t *fa, uint32_t *fb)
     }
 }
 
-void bench_ntt_vec(uint32_t *A, uint32_t *B)
+void bench_ntt_vec(const uint32_t *A, const uint32_t *B)
 {
     // gnereate random A and B
     int i, j;
     uint64_t t0, t1;
     uint64_t cycles[NTESTS];
+    uint32_t A_copy[N] = {0};
+    uint32_t B_copy[N] = {0};
     uint32_t dst[N + 1] = {0};
     uint32_t fa[N] = {0};
     uint32_t fb[N] = {0};
@@ -186,8 +188,8 @@ void bench_ntt_vec(uint32_t *A, uint32_t *B)
 
     for (unsigned k = 0; k < N / 2; ++k)
     {
-        A[k] = to_mont(A[k]);
-        B[k] = to_mont(B[k]);
+        A_copy[k] = to_mont(A[k]);
+        B_copy[k] = to_mont(B[k]);
     }
 
     ntt_init();
@@ -196,8 +198,8 @@ void bench_ntt_vec(uint32_t *A, uint32_t *B)
     {
         for (j = 0; j < NWARMUP; j++)
         {
-            memcpy(fa, A, N * sizeof(uint32_t));
-            memcpy(fb, B, N * sizeof(uint32_t));
+            memcpy(fa, A_copy, N * sizeof(uint32_t));
+            memcpy(fb, B_copy, N * sizeof(uint32_t));
             memset(dst, 0, (N + 1) * sizeof(uint32_t));
             multiply(dst, fa, fb);
         }
@@ -206,8 +208,8 @@ void bench_ntt_vec(uint32_t *A, uint32_t *B)
 
         for (j = 0; j < NITERATIONS; j++)
         {
-            memcpy(fa, A, N * sizeof(uint32_t));
-            memcpy(fb, B, N * sizeof(uint32_t));
+            memcpy(fa, A_copy, N * sizeof(uint32_t));
+            memcpy(fb, B_copy, N * sizeof(uint32_t));
             memset(dst, 0, (N + 1) * sizeof(uint32_t));
             multiply(dst, fa, fb);
         }
@@ -216,13 +218,10 @@ void bench_ntt_vec(uint32_t *A, uint32_t *B)
     }
     qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
     print_benchmark_results("Montgomery NTT VEC", cycles);
-    print_big_hex(A, LIMBS_NUM);
-    print_big_hex(B, LIMBS_NUM);
-    print_big_hex(dst, N);
 
 #ifdef VERBOSE
     printf("------------------------------------------\n");
-    print_computation_result("Montgomery NTT multiplication", A, B, dst, LIMBS_NUM, 0);
+    print_computation_result_ntt("Montgomery NTT multiplication", A, B, dst, LIMBS_NUM);
     printf("------------------------------------------\n");
 #endif
 

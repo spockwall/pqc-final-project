@@ -131,13 +131,10 @@ void bench_naive_ntt(const uint32_t *A, const uint32_t *B)
     }
     qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
     print_benchmark_results("Naive NTT_vec", cycles);
-    print_big_hex(A, LIMBS_NUM);
-    print_big_hex(B, LIMBS_NUM);
-    print_big_hex(dst, N);
 
 #ifdef VERBOSE
     printf("------------------------------------------\n");
-    print_computation_result("Naive NTT multiplication", A, B, dst, LIMBS_NUM, 0);
+    print_computation_result_ntt("Naive NTT multiplication", A, B, dst, LIMBS_NUM);
     printf("------------------------------------------\n");
 #endif
 

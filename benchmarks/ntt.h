@@ -18,4 +18,4 @@
 
 #define R2INV ((uint32_t)((uint64_t)RINV * RINV % Q))
 
-void bench_ntt(uint32_t *A, uint32_t *B);
+void bench_ntt(const uint32_t *A, const uint32_t *B);

@@ -60,7 +60,7 @@ static void ntt(uint32_t *x, int invert)
     // ---------------- 主循環：同樣 m 由 N/2 → 1 ----------------
     for (unsigned m = N >> 1, step = 1; m; m >>= 1, step <<= 1)
     {
-        const unsigned seg = m << 1;          // 一段 = 2m
+        const unsigned seg = m << 1; // 一段 = 2m
         uint32_t *wt = invert ? wtbl : iwtbl;
         for (unsigned s = 0; s < N; s += seg) // 每段各做一次蝴蝶輪
         {
@@ -107,20 +107,22 @@ static void multiply(uint32_t *dst, uint32_t *fa, uint32_t *fb)
     }
 }
 
-void bench_ntt(uint32_t *A, uint32_t *B)
+void bench_ntt(const uint32_t *A, const uint32_t *B)
 {
     // gnereate random A and B
     int i, j;
     uint64_t t0, t1;
     uint64_t cycles[NTESTS];
+    uint32_t A_copy[N] = {0};
+    uint32_t B_copy[N] = {0};
     uint32_t dst[N + 1] = {0};
     uint32_t fa[N] = {0};
     uint32_t fb[N] = {0};
 
     for (unsigned k = 0; k < N / 2; ++k)
     {
-        A[k] = to_mont(A[k]);
-        B[k] = to_mont(B[k]);
+        A_copy[k] = to_mont(A[k]);
+        B_copy[k] = to_mont(B[k]);
     }
 
     ntt_init();
@@ -129,8 +131,8 @@ void bench_ntt(uint32_t *A, uint32_t *B)
     {
         for (j = 0; j < NWARMUP; j++)
         {
-            memcpy(fa, A, N * sizeof(uint32_t));
-            memcpy(fb, B, N * sizeof(uint32_t));
+            memcpy(fa, A_copy, N * sizeof(uint32_t));
+            memcpy(fb, B_copy, N * sizeof(uint32_t));
             memset(dst, 0, (N + 1) * sizeof(uint32_t));
             multiply(dst, fa, fb);
         }
@@ -139,8 +141,8 @@ void bench_ntt(uint32_t *A, uint32_t *B)
 
         for (j = 0; j < NITERATIONS; j++)
         {
-            memcpy(fa, A, N * sizeof(uint32_t));
-            memcpy(fb, B, N * sizeof(uint32_t));
+            memcpy(fa, A_copy, N * sizeof(uint32_t));
+            memcpy(fb, B_copy, N * sizeof(uint32_t));
             memset(dst, 0, (N + 1) * sizeof(uint32_t));
             multiply(dst, fa, fb);
         }
@@ -149,17 +151,10 @@ void bench_ntt(uint32_t *A, uint32_t *B)
     }
     qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
     print_benchmark_results("Montgomery NTT", cycles);
-    print_big_hex(A, LIMBS_NUM);
-    print_big_hex(B, LIMBS_NUM);
-    print_big_hex(dst, N);
 
 #ifdef VERBOSE
     printf("------------------------------------------\n");
-    print_computation_result("Montgomery NTT multiplication", A, B, dst, LIMBS_NUM, 0);
-    printf("------------------------------------------\n");
+    print_computation_result_ntt("Montgomery NTT multiplication", A, B, dst, LIMBS_NUM);
+    printf("------------------------------------------\n\n");
 #endif
-
-    // Clear memory
-    for (i = 0; i < LIMBS_NUM << 1; i++)
-        dst[i] = 0; // zero the result
 }

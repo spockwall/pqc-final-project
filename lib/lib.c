@@ -116,6 +116,17 @@ void print_computation_result(const char *txt, uint32_t *A, uint32_t *B, uint32_
     print_bigint(dst, n_limbs << 1, fmt);
 }
 
+void print_computation_result_ntt(const char *txt, const uint32_t *A, const uint32_t *B, const uint32_t *dst, size_t n_limbs)
+{
+    printf("%s:\n", txt);
+    printf("A = ");
+    print_big_hex(A, n_limbs);
+    printf("B = ");
+    print_big_hex(B, n_limbs);
+    printf("Result = ");
+    print_big_hex(dst, n_limbs << 1);
+}
+
 void print_big_hex(const uint32_t *x, unsigned limbs)
 {
     unsigned hex_digits = (BITS_PER_LIMB + 3) / 4; // ceil(bits/4)
