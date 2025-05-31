@@ -32,7 +32,6 @@ CFLAGS := \
 	-pedantic \
 	-Ihal \
 	-Ilib \
-	-Ifft \
 	-Ibenchmarks \
 	-MMD \
 	-DLIMBS_NUM=$(LIMBS_NUM) \
