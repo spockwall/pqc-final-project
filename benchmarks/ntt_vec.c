@@ -20,8 +20,10 @@ static uint32_t iwtbl[N]; // inverse roots  w^{‑k} * R
 static uint32_t n_inv;    // n^{‑1} * R mod Q  (for final scaling)
 static uint32_t mont_one; // 1 in Montgomery form
 
+static uint32_t brt_table[N];
 static uint32_t *w_cache_table;  // cache for Montgomery roots
 static uint32_t *iw_cache_table; // cache for Montgomery inverse roots
+static uint32_t brt_table_len = 0;
 
 static void ntt_init(void)
 {
@@ -50,13 +52,10 @@ static void ntt_init(void)
             }
         }
     }
-}
 
-// bit‑reversal permutation (in‑place)
-static inline void bit_reverse(uint32_t *x)
-{
-    unsigned j = 0;
-    for (unsigned i = 1; i < N; ++i)
+    // cache bit reverse table
+    memset(brt_table, 0, sizeof(brt_table));
+    for (unsigned i = 1, j = 0; i < N; ++i)
     {
         unsigned bit = N >> 1;
         while (j & bit)
@@ -67,9 +66,24 @@ static inline void bit_reverse(uint32_t *x)
         j ^= bit;
         if (i < j)
         {
-            uint32_t tmp = x[i];
-            x[i] = x[j];
-            x[j] = tmp;
+            brt_table[brt_table_len++] = i;
+            brt_table[brt_table_len++] = j;
+        }
+    }
+}
+
+// bit‑reversal permutation (in‑place)
+static inline void bit_reverse(uint32_t *x)
+{
+    for (unsigned i = 0; i < brt_table_len; i += 2)
+    {
+        unsigned j = brt_table[i];
+        unsigned k = brt_table[i + 1];
+        if (j < k)
+        {
+            uint32_t t = x[j];
+            x[j] = x[k];
+            x[k] = t;
         }
     }
 }
@@ -121,7 +135,6 @@ static void ntt_vec(uint32_t *x, int invert)
             }
         }
     }
-
     bit_reverse(x);
 
     if (!invert)
@@ -212,7 +225,7 @@ void bench_ntt_vec(const uint32_t *A, const uint32_t *B)
 
 #ifdef VERBOSE
     printf("------------------------------------------\n");
-    print_computation_result_ntt("Montgomery NTT multiplication", A_copy, B_copy, dst, LIMBS_NUM);
+    print_computation_result_ntt("Montgomery NTT multiplication", A, B, dst, LIMBS_NUM);
     printf("------------------------------------------\n");
 #endif
 
