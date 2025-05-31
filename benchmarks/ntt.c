@@ -55,12 +55,13 @@ static inline void bit_reverse(uint32_t *x)
     }
 }
 
-static void ntt_vec(uint32_t *x, int invert)
+static void ntt(uint32_t *x, int invert)
 {
     // ---------------- 主循環：同樣 m 由 N/2 → 1 ----------------
     for (unsigned m = N >> 1, step = 1; m; m >>= 1, step <<= 1)
     {
         const unsigned seg = m << 1;          // 一段 = 2m
+        uint32_t *wt = invert ? wtbl : iwtbl;
         for (unsigned s = 0; s < N; s += seg) // 每段各做一次蝴蝶輪
         {
             uint32_t w = mont_one; // 本段的 twiddle 起點
@@ -72,8 +73,7 @@ static void ntt_vec(uint32_t *x, int invert)
                 uint32_t u = x[j];
                 uint32_t v = x[j2];
                 x[j] = add_mod(u, v);
-                x[j2] = mont_mul(sub_mod(u, v), w);
-                w = invert ? wtbl[step * (i + 1) % N] : iwtbl[step * (i + 1) % N];
+                x[j2] = mont_mul(sub_mod(u, v), wt[step * i]);
             }
         }
     }
@@ -90,11 +90,11 @@ static void ntt_vec(uint32_t *x, int invert)
 
 static void multiply(uint32_t *dst, uint32_t *fa, uint32_t *fb)
 {
-    ntt_vec(fa, 0);
-    ntt_vec(fb, 0);
+    ntt(fa, 0);
+    ntt(fb, 0);
     for (unsigned i = 0; i < N; ++i)
         dst[i] = mont_mul(fa[i], fb[i]);
-    ntt_vec(dst, 1);
+    ntt(dst, 1);
 
     for (unsigned i = 0; i < N; ++i)
         dst[i] = from_mont(dst[i]);
@@ -148,7 +148,7 @@ void bench_ntt(uint32_t *A, uint32_t *B)
         cycles[i] = t1 - t0;
     }
     qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
-    print_benchmark_results("Montgomery NTT_vec", cycles);
+    print_benchmark_results("Montgomery NTT", cycles);
     print_big_hex(A, LIMBS_NUM);
     print_big_hex(B, LIMBS_NUM);
     print_big_hex(dst, N);
