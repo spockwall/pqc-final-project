@@ -75,6 +75,16 @@ void generate_random_bigint(uint32_t *output, int n_bits, int masked)
     }
 }
 
+void generate_random_bigint_u64(uint64_t *output, int n_bits)
+{
+    int n_limbs = (n_bits + 23) / 24; // 每個 limb 64 bits
+    printf("Generating random bigint with %d bits (%d limbs)\n", n_bits, n_limbs);
+    for (int i = 0; i < n_limbs; i++)
+    {
+        output[i] = (uint64_t)rand() % (1ULL << 24); // 每個 limb 隨機生成 64 bits
+    }
+}
+
 // print the median of the benchmarking results
 static void print_median(const char *txt, uint64_t cyc[NTESTS])
 {
@@ -140,6 +150,18 @@ void print_computation_result_ntt(const char *txt, const uint32_t *A, const uint
     print_big_hex(dst, n_limbs << 1);
 }
 
+void print_computation_result_ntt_u64(const char *txt, const uint64_t *A, const uint64_t *B, const uint64_t *dst, size_t n_limbs)
+{
+    printf("%s:\n", txt);
+    printf("A = ");
+    print_big_hex_u64(A, n_limbs);
+    printf("\nB = ");
+    print_big_hex_u64(B, n_limbs);
+    printf("\nResult = ");
+    print_big_hex_u64(dst, n_limbs << 1);
+    printf("\n");
+}
+
 void print_big_hex(const uint32_t *x, unsigned limbs)
 {
     unsigned hex_digits = (BITS_PER_LIMB + 3) / 4; // ceil(bits/4)
@@ -151,6 +173,23 @@ void print_big_hex(const uint32_t *x, unsigned limbs)
 
     char fmt[16];
     sprintf(fmt, "%%0%ux", hex_digits); // 例如 %03x, %05x, %08x
+
+    for (unsigned i = 0; i < limbs; ++i)
+        printf(fmt, x[i]);
+    printf("\n");
+}
+
+void print_big_hex_u64(const uint64_t *x, unsigned limbs)
+{
+    unsigned hex_digits = (24 + 3) / 4; // ceil(bits/4)
+    if (hex_digits < 1 || hex_digits > 16)
+    {
+        fprintf(stderr, "Unsupported hex digits: %u\n", hex_digits);
+        exit(EXIT_FAILURE);
+    }
+
+    char fmt[16];
+    sprintf(fmt, "%%0%ux", hex_digits); // 例如 %03llx, %05llx, %016llx
 
     for (unsigned i = 0; i < limbs; ++i)
         printf(fmt, x[i]);

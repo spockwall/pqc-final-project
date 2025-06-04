@@ -26,11 +26,14 @@ void gmp_rand_operand_gen(mpz_t output, int n_bits);
 void print_bigint(uint32_t *a, size_t n, int fmt);
 
 void generate_random_bigint(uint32_t *output, int n_bits, int masked);
+void generate_random_bigint_u64(uint64_t *output, int n_bits);
 
 // Benchmarking functions
 int cmp_uint64_t(const void *a, const void *b);
 void print_benchmark_results(const char *txt, uint64_t cycles[NTESTS]);
 void print_computation_result(const char *txt, uint32_t *A, uint32_t *B, uint32_t *dst, size_t n_limbs, int fmt);
 void print_computation_result_ntt(const char *txt, const uint32_t *A, const uint32_t *B, const uint32_t *dst, size_t n_limbs);
+void print_computation_result_ntt_u64(const char *txt, const uint64_t *A, const uint64_t *B, const uint64_t *dst, size_t n_limbs);
 
 void print_big_hex(const uint32_t *x, unsigned limbs);
+void print_big_hex_u64(const uint64_t *x, unsigned limbs);
