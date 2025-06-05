@@ -101,3 +101,45 @@ static inline uint64x2_t mont_mul_vec64(uint64x2_t a, uint64x2_t b)
 
     return vbslq_u64(mask, u, u_q);
 }
+
+// static inline uint64x2_t mont_mul_vec64(uint64x2_t va, uint64x2_t vb)
+//{
+//     uint64_t a0 = vgetq_lane_u64(va, 0);
+//     uint64_t a1 = vgetq_lane_u64(va, 1);
+//     uint64_t b0 = vgetq_lane_u64(vb, 0);
+//     uint64_t b1 = vgetq_lane_u64(vb, 1);
+
+//    uint64_t r0, r1;
+
+//    /* ---- lane 0 ---- */
+//    __asm__ volatile(
+//        "mul     x10,  %[a0], %[b0]     \n\t"   // t_lo
+//        "umulh   x11,  %[a0], %[b0]     \n\t"   // t_hi
+//        "mul     x12,  x10,   %[qinv]   \n\t"   // m
+//        "madd    x13,  x12,   %[mod], x10 \n\t" // lo_part = t_lo + m*Q (low) (丟棄)
+//        "umulh   x14,  x12,   %[mod]    \n\t"   // hi_part = (t_lo+m*Q)>>64
+//        "adds    x14,  x14,   x11       \n\t"   // + t_hi
+//        "sub     x15,  x14,   %[mod]    \n\t"
+//        "csel    %[r0], x15,   x14, hi  \n\t"
+//        : [r0] "=r"(r0)
+//        : [a0] "r"(a0), [b0] "r"(b0),
+//          [qinv] "r"(QINV), [mod] "r"(Q)
+//        : "x10", "x11", "x12", "x13", "x14", "x15", "cc");
+
+//    /* ---- lane 1 ----  (同上，換參數寄存器即可) */
+//    __asm__ volatile(
+//        "mul     x10,  %[a1], %[b1]     \n\t"
+//        "umulh   x11,  %[a1], %[b1]     \n\t"
+//        "mul     x12,  x10,   %[qinv]   \n\t"
+//        "madd    x13,  x12,   %[mod], x10 \n\t"
+//        "umulh   x14,  x12,   %[mod]    \n\t"
+//        "adds    x14,  x14,   x11       \n\t"
+//        "sub     x15,  x14,   %[mod]    \n\t"
+//        "csel    %[r1], x15,   x14, hi  \n\t"
+//        : [r1] "=r"(r1)
+//        : [a1] "r"(a1), [b1] "r"(b1),
+//          [qinv] "r"(QINV), [mod] "r"(Q)
+//        : "x10", "x11", "x12", "x13", "x14", "x15", "cc");
+
+//    return vcombine_u64(vcreate_u64(r0), vcreate_u64(r1));
+//}

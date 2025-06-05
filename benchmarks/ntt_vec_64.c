@@ -8,8 +8,6 @@
 #include "hal.h"
 #include "ntt.h"
 #include "lib.h"
-// #include "ntt_helpers.h"
-// #include "ntt_vec_helpers.h"
 #include "ntt_vec_64.h"
 #include "ntt_vec_64_helpers.h"
 
@@ -25,8 +23,9 @@ static uint64_t brt_table_len = 0;
 
 static void ntt_init(void)
 {
-    uint64_t w = mont_pow_mod(to_mont(G), (Q_64 - 1U) / N);
-    uint64_t iw = mont_pow_mod(w, Q_64 - 2U); // w^{‑1} * R mod Q
+    uint64_t w = mont_pow_mod(to_mont(7), (Q_64 - 1U) / N);
+    uint64_t iw = mont_pow_mod(w, Q_64 - 2U);    // w^{‑1} * R mod Q
+    n_inv = mont_pow_mod(to_mont(N), Q_64 - 2U); // N^{‑1} * R mod Q
 
     wtbl[0] = iwtbl[0] = mont_one = to_mont(1U);
     for (size_t i = 1; i < N; ++i)
@@ -34,7 +33,6 @@ static void ntt_init(void)
         wtbl[i] = mont_mul(wtbl[i - 1], w);
         iwtbl[i] = mont_mul(iwtbl[i - 1], iw);
     }
-    n_inv = mont_pow_mod(to_mont(N), Q_64 - 2U); // N^{‑1} * R mod Q
 
     // cache Montgomery roots, make it serial to avoid cache misses
     int cnt = 0;
@@ -119,7 +117,7 @@ static void ntt_vec(uint64_t *x, int invert)
                 cnt += 2;
             }
 
-            // ---- tail ( ≤3 butterflies ) – scalar -----------------------
+            // ---- tail ( ≤1 butterflies ) – scalar -----------------------
             for (; i < m; ++i)
             {
                 unsigned j = s + i;
@@ -169,8 +167,8 @@ static void multiply(uint64_t *dst, uint64_t *fa, uint64_t *fb)
     // carry propagation in radix‑2^12
     for (unsigned k = 0; k < N; ++k)
     {
-        dst[k + 1] += dst[k] >> 24;          // BITS_per_limb = 24
-        dst[k] &= ((uint64_t)(1 << 24) - 1); // 0x00ffffff
+        dst[k + 1] += dst[k] >> BITS_PER_LIMB_U64;
+        dst[k] &= ((uint64_t)(1 << BITS_PER_LIMB_U64) - 1); // 0x00ffffff
     }
 }
 
@@ -186,8 +184,8 @@ void bench_ntt_vec_64(const uint64_t *A, const uint64_t *B)
     uint64_t fb[N] = {0};
     uint64_t dst[N + 1] = {0};
 
-    w_cache_table = malloc((BITS_PER_LIMB * LIMBS_NUM << 1) * sizeof(uint64_t));
-    iw_cache_table = malloc((BITS_PER_LIMB * LIMBS_NUM << 1) * sizeof(uint64_t));
+    w_cache_table = malloc(((BITS_PER_LIMB_U64 * LIMBS_NUM) << 1) * sizeof(uint64_t));
+    iw_cache_table = malloc(((BITS_PER_LIMB_U64 * LIMBS_NUM) << 1) * sizeof(uint64_t));
 
     for (unsigned k = 0; k < N / 2; ++k)
     {

@@ -8,6 +8,7 @@
 
 // big integer parameters
 #define BITS_PER_LIMB 12 // bits in a single limb
+#define BITS_PER_LIMB_U64 24 // bits in a single limb for 64-bit limbs
 #define BASE ((uint64_t)1 << BITS_PER_LIMB)
 #define MAX_LIMBS_NUM 2048 // support up to 65536-bits (2048 * 32-bit)
 #define N (LIMBS_NUM << 1) // NTT length, degree of polynomial
