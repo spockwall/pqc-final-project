@@ -28,6 +28,8 @@ CFLAGS := \
 	-march=armv8-a+simd \
 	-fomit-frame-pointer \
 	-funroll-loops \
+	-fopenmp \
+	-pthread \
 	-std=c99 \
 	-pedantic \
 	-Ihal \

@@ -8,6 +8,7 @@
 #include "hal.h"
 #include "ntt.h"
 #include "lib.h"
+#include <omp.h>
 #include "ntt_helpers.h"
 #include "ntt_vec_helpers.h"
 #include "ntt_vec.h"
@@ -21,8 +22,6 @@ static uint32_t n_inv;    // n^{‑1} * R mod Q  (for final scaling)
 static uint32_t mont_one; // 1 in Montgomery form
 
 static uint32_t brt_table[N];
-static uint32_t *w_cache_table;  // cache for Montgomery roots
-static uint32_t *iw_cache_table; // cache for Montgomery inverse roots
 static uint32_t brt_table_len = 0;
 
 static void ntt_init(void)
@@ -37,21 +36,6 @@ static void ntt_init(void)
         iwtbl[i] = mont_mul(iwtbl[i - 1], iw);
     }
     n_inv = mont_pow_mod(to_mont(N), Q - 2U); // N^{‑1} * R mod Q
-
-    // cache Montgomery roots, make it serial to avoid cache misses
-    int cnt = 0;
-    for (unsigned m = N >> 1, step = 1; m; m >>= 1, step <<= 1)
-    {
-        const unsigned seg = m << 1;
-        for (unsigned s = 0; s < N; s += seg)
-        {
-            for (unsigned i = 0; i < m; ++i)
-            {
-                w_cache_table[cnt] = wtbl[step * i];
-                iw_cache_table[cnt++] = iwtbl[step * i];
-            }
-        }
-    }
 
     // cache bit reverse table
     memset(brt_table, 0, sizeof(brt_table));
@@ -90,12 +74,12 @@ static inline void bit_reverse(uint32_t *x)
 
 static void ntt_vec(uint32_t *x, int invert)
 {
-    uint32_t cnt = 0;
-    // m from N/2 to 1
+    //  m from N/2 to 1
     for (unsigned m = N >> 1, step = 1; m; m >>= 1, step <<= 1)
     {
         const unsigned seg = m << 1;
-        uint32_t *wt = invert ? w_cache_table : iw_cache_table;
+        uint32_t *wt = invert ? wtbl : iwtbl;
+#pragma omp parallel for schedule(static)
         for (unsigned s = 0; s < N; s += seg) // 每段各做一次蝴蝶輪
         {
             unsigned i = 0;
@@ -105,7 +89,8 @@ static void ntt_vec(uint32_t *x, int invert)
                 unsigned j2 = j + m;
 
                 // twiddle factors  w^{step*(i+k)}
-                uint32x4_t w = vld1q_u32(&wt[cnt]);
+                uint32x4_t w = {wt[step * i], wt[step * (i + 1)],
+                                wt[step * (i + 2)], wt[step * (i + 3)]};
 
                 // load data
                 uint32x4_t u = vld1q_u32(&x[j]);
@@ -118,7 +103,7 @@ static void ntt_vec(uint32_t *x, int invert)
 
                 vst1q_u32(&x[j], add);
                 vst1q_u32(&x[j2], prod);
-                cnt += 4; // 4 roots per iteration
+                // cnt += 4; // 4 roots per iteration
             }
 
             // ---- tail ( ≤3 butterflies ) – scalar -----------------------
@@ -131,7 +116,7 @@ static void ntt_vec(uint32_t *x, int invert)
                 uint32_t v = x[j2];
 
                 x[j] = add_mod(u, v);
-                x[j2] = mont_mul(sub_mod(u, v), wt[cnt++]);
+                x[j2] = mont_mul(sub_mod(u, v), wt[step * i]);
             }
         }
     }
@@ -142,7 +127,8 @@ static void ntt_vec(uint32_t *x, int invert)
 
     // Inverse NTT: multiply n^{-1}, and  N is a multiple of 4
     uint32x4_t ninv = vdupq_n_u32(n_inv);
-    for (unsigned i = 0; i + 3 < N; i += 4)
+#pragma omp parallel for schedule(static)
+    for (unsigned i = 0; i < N; i += 4)
     {
         uint32x4_t t = vld1q_u32(&x[i]);
         t = mont_mul_vec(t, ninv);
@@ -156,7 +142,8 @@ static void multiply(uint32_t *dst, uint32_t *fa, uint32_t *fb)
     ntt_vec(fb, 0);
 
     // Vectorised point-wise multiply, N is a multiple of 4
-    for (unsigned i = 0; i + 3 < N; i += 4)
+#pragma omp parallel for schedule(static)
+    for (unsigned i = 0; i < N; i += 4)
     {
         uint32x4_t a = vld1q_u32(&fa[i]);
         uint32x4_t b = vld1q_u32(&fb[i]);
@@ -188,8 +175,8 @@ void bench_ntt_vec(const uint32_t *A, const uint32_t *B)
     uint32_t fb[N] = {0};
     uint32_t dst[N + 1] = {0};
 
-    w_cache_table = malloc((BITS_PER_LIMB * LIMBS_NUM << 1) * sizeof(uint32_t));
-    iw_cache_table = malloc((BITS_PER_LIMB * LIMBS_NUM << 1) * sizeof(uint32_t));
+    // w_cache_table = malloc((BITS_PER_LIMB * LIMBS_NUM << 1) * sizeof(uint32_t));
+    // iw_cache_table = malloc((BITS_PER_LIMB * LIMBS_NUM << 1) * sizeof(uint32_t));
 
     for (unsigned k = 0; k < N / 2; ++k)
     {
@@ -229,6 +216,6 @@ void bench_ntt_vec(const uint32_t *A, const uint32_t *B)
     printf("------------------------------------------\n");
 #endif
 
-    free(w_cache_table);
-    free(iw_cache_table);
+    // free(w_cache_table);
+    // free(iw_cache_table);
 }
