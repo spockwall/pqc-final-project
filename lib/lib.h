@@ -8,7 +8,6 @@
 
 // big integer parameters
 #define BITS_PER_LIMB 12 // bits in a single limb
-#define BITS_PER_LIMB_U64 24 // bits in a single limb for 64-bit limbs
 #define BASE ((uint64_t)1 << BITS_PER_LIMB)
 #define MAX_LIMBS_NUM 2048 // support up to 65536-bits (2048 * 32-bit)
 #define N (LIMBS_NUM << 1) // NTT length, degree of polynomial
@@ -34,7 +33,6 @@ int cmp_uint64_t(const void *a, const void *b);
 void print_benchmark_results(const char *txt, uint64_t cycles[NTESTS]);
 void print_computation_result(const char *txt, uint32_t *A, uint32_t *B, uint32_t *dst, size_t n_limbs, int fmt);
 void print_computation_result_ntt(const char *txt, const uint32_t *A, const uint32_t *B, const uint32_t *dst, size_t n_limbs);
-void print_computation_result_ntt_u64(const char *txt, const uint64_t *A, const uint64_t *B, const uint64_t *dst, size_t n_limbs);
 
 void print_big_hex(const uint32_t *x, unsigned limbs);
 void print_big_hex_u64(const uint64_t *x, unsigned limbs);
