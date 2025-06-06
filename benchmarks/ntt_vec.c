@@ -1,5 +1,6 @@
 #include <arm_neon.h>
 #include <inttypes.h>
+#include <omp.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -8,7 +9,6 @@
 #include "hal.h"
 #include "ntt.h"
 #include "lib.h"
-#include <omp.h>
 #include "ntt_helpers.h"
 #include "ntt_vec_helpers.h"
 #include "ntt_vec.h"
@@ -174,9 +174,6 @@ void bench_ntt_vec(const uint32_t *A, const uint32_t *B)
     uint32_t fa[N] = {0};
     uint32_t fb[N] = {0};
     uint32_t dst[N + 1] = {0};
-
-    // w_cache_table = malloc((BITS_PER_LIMB * LIMBS_NUM << 1) * sizeof(uint32_t));
-    // iw_cache_table = malloc((BITS_PER_LIMB * LIMBS_NUM << 1) * sizeof(uint32_t));
 
     for (unsigned k = 0; k < N / 2; ++k)
     {
