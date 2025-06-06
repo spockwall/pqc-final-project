@@ -10,7 +10,6 @@
 #include "benchmarks/ntt.h"
 #include "benchmarks/naive_ntt.h"
 #include "benchmarks/ntt_vec.h"
-#include "benchmarks/ntt_vec_64.h"
 
 int main()
 {
@@ -39,25 +38,20 @@ int main()
     bench_gmp(A, B);
 
     //// Karatsuba multiplication benchmark
-    //bench_karatsuba(A, B);
+    bench_karatsuba(A, B);
 
-    //// -----------big integers with masked limbs-------------
-    //generate_random_bigint(A, LIMBS_NUM * BITS_PER_LIMB, 1);
-    //generate_random_bigint(B, LIMBS_NUM * BITS_PER_LIMB, 1);
+    // -----------big integers with masked limbs-------------
+    generate_random_bigint(A, LIMBS_NUM * BITS_PER_LIMB, 1);
+    generate_random_bigint(B, LIMBS_NUM * BITS_PER_LIMB, 1);
 
-    //// Naive NTT multiplication benchmark
-    //bench_naive_ntt(A, B);
+    // Naive NTT multiplication benchmark
+    bench_naive_ntt(A, B);
 
-    //// NTT multiplication benchmark
-    //bench_ntt(A, B);
+    // NTT multiplication benchmark
+    bench_ntt(A, B);
 
-    //// NTT multiplication using arm neon benchmark
-    //bench_ntt_vec(A, B);
-
-    generate_random_bigint_u64(A_u64, LIMBS_NUM * 24);
-    generate_random_bigint_u64(B_u64, LIMBS_NUM * 24);
-    // NTT multiplication using arm neon with 64-bit limbs benchmark
-    bench_ntt_vec_64(A_u64, B_u64);
+    // NTT multiplication using arm neon benchmark
+    bench_ntt_vec(A, B);
 
     disable_cyclecounter();
     return 0;
