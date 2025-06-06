@@ -89,10 +89,9 @@ static void ntt_vec(uint32_t *x, int invert)
                 unsigned j2 = j + m;
 
                 // twiddle factors  w^{step*(i+k)}
-                uint32x4_t w = {wt[step * i], wt[step * (i + 1)],
-                                wt[step * (i + 2)], wt[step * (i + 3)]};
+                uint32x4_t w = {wt[step * i], wt[step * (i + 1)], wt[step * (i + 2)], wt[step * (i + 3)]};
 
-                // load data
+                //    // load data
                 uint32x4_t u = vld1q_u32(&x[j]);
                 uint32x4_t v = vld1q_u32(&x[j2]);
 
@@ -103,9 +102,7 @@ static void ntt_vec(uint32_t *x, int invert)
 
                 vst1q_u32(&x[j], add);
                 vst1q_u32(&x[j2], prod);
-                // cnt += 4; // 4 roots per iteration
             }
-
             // ---- tail ( ≤3 butterflies ) – scalar -----------------------
             for (; i < m; ++i)
             {
