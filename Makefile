@@ -22,6 +22,7 @@ CFLAGS := \
 	-Wno-dangling-pointer \
 	-Wno-unused-function \
 	-Wno-unused-variable \
+	-Wno-unused-parameter \
 	-O3 \
 	-mcpu=cortex-a72 \
 	-mtune=cortex-a72 \
