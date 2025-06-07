@@ -50,6 +50,7 @@ void bench_ntt_vec(const uint32_t *A, const uint32_t *B)
         t1 = get_cyclecounter();
         cycles[i] = t1 - t0;
     }
+    ntt_vec_free();
     qsort(cycles, NTESTS, sizeof(uint64_t), cmp_uint64_t);
     print_benchmark_results("Montgomery NTT VEC", cycles);
 

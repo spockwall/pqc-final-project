@@ -23,6 +23,7 @@ CFLAGS := \
 	-Wno-unused-function \
 	-Wno-unused-variable \
 	-Wno-unused-parameter \
+	-Wno-unused-but-set-variable \
 	-O3 \
 	-mcpu=cortex-a72 \
 	-mtune=cortex-a72 \
@@ -58,6 +59,10 @@ endif
 # if verbose, print computation result
 ifeq ($(VERBOSE), TRUE)
 	CFLAGS += -DVERBOSE
+endif
+
+ifeq ($(MULTITHREADING), TRUE)
+	CFLAGS += -DMULTITHREADING
 endif
 
 TARGET = bench
