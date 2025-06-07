@@ -4,11 +4,10 @@
 #include <time.h>
 #include "hal.h"
 #include "lib.h"
-#include "benchmarks/ntt_helpers.h"
 #include "benchmarks/gmp_mul.h"
-#include "benchmarks/karatsuba.h"
 #include "benchmarks/ntt.h"
-#include "benchmarks/naive_ntt.h"
+#include "benchmarks/karatsuba.h"
+#include "benchmarks/ntt_naive.h"
 #include "benchmarks/ntt_vec.h"
 
 int main()
@@ -45,7 +44,7 @@ int main()
     generate_random_bigint(B, LIMBS_NUM * BITS_PER_LIMB, 1);
 
     // Naive NTT multiplication benchmark
-    bench_naive_ntt(A, B);
+    bench_ntt_naive(A, B);
 
     // NTT multiplication benchmark
     bench_ntt(A, B);

@@ -61,7 +61,7 @@ ifeq ($(VERBOSE), TRUE)
 endif
 
 TARGET = bench
-SOURCES = hal/hal.c lib/lib.c benchmarks/*.c bench.c
+SOURCES = hal/hal.c lib/lib.c benchmarks/*.c algorithms/*.c bench.c 
 
 $(TARGET): $(SOURCES)
 	$(CC) $(CFLAGS) $(SOURCES) -o $(TARGET) $(LDFLAGS) $(LDLIBS)

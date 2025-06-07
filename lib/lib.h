@@ -1,3 +1,4 @@
+#pragma once
 #include <gmp.h>
 #include <stdint.h>
 
@@ -5,6 +6,19 @@
 #define NWARMUP 50
 #define NITERATIONS 300
 #define NTESTS 500
+
+// NTT parameters,
+// Q * QINV = = 4,294,967,295 = -1 mod 2³², for Montgomery
+// Convenient NTT prime: p = 15·2²⁷ + 1 = 2013265921
+#define Q ((uint32_t)2130706433u)
+#define QINV ((uint32_t)2130706431u)
+// primitive root modulo Q
+#define G ((uint32_t)3u)
+
+// R = 2^32 for Montgomery reduction
+#define R ((uint64_t)1ull << 32)
+#define RINV (uint32_t)(R % Q)
+#define R2INV ((uint32_t)((uint64_t)RINV * RINV % Q))
 
 // big integer parameters
 #define BITS_PER_LIMB 14 // bits in a single limb

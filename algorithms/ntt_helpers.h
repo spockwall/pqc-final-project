@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "ntt.h"
+#include "lib.h"
 
 // ---------- mod-arithmetic --------------------------
 static inline uint32_t add_mod(uint32_t a, uint32_t b)
