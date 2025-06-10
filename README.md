@@ -28,7 +28,6 @@ $ ./bench
 ```
 
 ## Usage
-
 To compile the GMP benchmarks that uses `perf` for cycle counting, run
 ```bash
 make CYCLES=PERF
@@ -58,8 +57,19 @@ make VERBOSE=TRUE ...
 ./bench
 ```
 
-To define number of limbs (Allowed: 8, 16, 32), run
+To define number of limbs (Allowed: 8, 16, 32, ... 2048), run
 ```bash
 make LIMBS_NUM=8 ...
 ./bench
+```
+
+To enable multithreading (Not recommanded), run
+```bash
+make MULTITHREADING=TRUE ...
+./bench
+```
+
+**One-line command for TAs to reproduce my presentation.**
+```bash
+make clean && make CYCLES=PERF VERBOSE=TRUE LIMBS_NUM=2048 && ./bench 
 ```
